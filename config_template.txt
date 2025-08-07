@@ -1,0 +1,35 @@
+CREA DDF API Configuration Template
+=====================================
+
+To use the CREA API client, you need to create a .env file in the same directory 
+as your Python files with the following content:
+
+-------- .env file content --------
+# CREA API Credentials
+CREA_CLIENT_ID=your_actual_client_id_here
+CREA_CLIENT_SECRET=your_actual_client_secret_here
+
+# Optional: Other environment variables
+# DATABASE_URL=your_database_connection_string
+# DEBUG=True
+# LOG_LEVEL=INFO
+-----------------------------------
+
+Setup Instructions:
+1. Create a file named ".env" in the realestate_ai_engine directory
+2. Copy the content between the dashed lines above into the .env file
+3. Replace "your_actual_client_id_here" with your real CREA client ID
+4. Replace "your_actual_client_secret_here" with your real CREA client secret
+5. Save the file
+6. Never commit the .env file to version control (add it to .gitignore)
+
+Getting CREA API Credentials:
+- You need to register with CREA as a developer
+- Visit the CREA developer portal to obtain your credentials
+- Make sure you have the proper permissions for the DDF API
+
+Testing Your Setup:
+Run the following command to test your configuration:
+python crea_api_examples.py
+
+This will test the connection and show you example API calls. 

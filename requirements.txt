@@ -1,0 +1,25 @@
+fastapi
+uvicorn[standard]
+spacy
+sentence-transformers
+apscheduler
+jinja2
+aiosmtplib
+requests
+python-dotenv
+
+# New dependencies for database and authentication
+sqlalchemy
+psycopg2-binary
+alembic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# Development dependencies
+pytest
+pytest-asyncio
+httpx
+
+# Optional: For better performance
+asyncpg
