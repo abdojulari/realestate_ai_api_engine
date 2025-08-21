@@ -124,3 +124,7 @@ cython_debug/
 # Database
 *.sqlite3
 *.db
+
+master_sync_stats_20250814_132308.json
+*.log
+*.json
