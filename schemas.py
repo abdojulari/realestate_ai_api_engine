@@ -2,7 +2,17 @@ from pydantic import BaseModel, EmailStr, validator, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from decimal import Decimal
+from enum import Enum
 import uuid
+
+# Platform Status Enum
+class PlatformStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    DENIED = "denied"
+    SUSPENDED = "suspended"
+    VERIFIED = "verified"
+    PREMIUM = "premium"
 
 # User schemas
 class UserBase(BaseModel):
@@ -27,6 +37,23 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = None
     phone: Optional[str] = None
     preferences: Optional[Dict[str, Any]] = None
+
+class PasswordChangeRequest(BaseModel):
+    """Request to change user password"""
+    current_password: str = Field(..., min_length=1, description="Current password")
+    new_password: str = Field(..., min_length=6, max_length=128, description="New password")
+    confirm_password: str = Field(..., min_length=6, max_length=128, description="Confirm new password")
+
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'new_password' in values and v != values['new_password']:
+            raise ValueError('New password and confirmation do not match')
+        return v
+
+class PasswordResetRequest(BaseModel):
+    """Request for password reset link"""
+    email: EmailStr = Field(..., description="Email address to send reset link to")
+    app_base_url: Optional[str] = Field(None, description="Base URL of the frontend app for reset link")
 
 class UserResponse(UserBase):
     user_id: uuid.UUID
@@ -92,6 +119,32 @@ class PropertyBase(BaseModel):
     is_new: Optional[bool] = False
     primary_image: Optional[str] = None
     images: Optional[List[str]] = None
+    
+    # CREA Integration fields
+    listing_key: Optional[str] = None
+    modification_timestamp: Optional[datetime] = None
+    
+    # CREA Agent and Office relationships  
+    listing_agent_id: Optional[str] = None
+    listing_office_id: Optional[str] = None
+    co_listing_agent_id: Optional[str] = None
+    co_listing_agent_id2: Optional[str] = None
+    co_listing_agent_id3: Optional[str] = None
+    co_listing_office_id: Optional[str] = None
+    co_listing_office_id2: Optional[str] = None
+    co_listing_office_id3: Optional[str] = None
+    
+    # CREA Additional fields
+    mls_listing_url: Optional[str] = None
+    common_interest: Optional[str] = None
+    accessibility_features: Optional[List[str]] = None
+    other_amenities: Optional[List[str]] = None
+    
+    # CREA Marketing & Financial fields
+    tax_annual_amount: Optional[Decimal] = None
+    days_on_market: Optional[int] = None
+    zoning: Optional[str] = None
+    availability_date: Optional[datetime] = None
 
 # Image Management Schemas
 class PropertyImageBase(BaseModel):
@@ -325,6 +378,10 @@ class PropertyResponse(PropertyBase):
     updated_at: datetime
     property_type: Optional[PropertyTypeResponse] = None
     
+    # Agent and Office relationships (populated programmatically)
+    listing_agent: Optional["CREAAgentProfileResponse"] = None
+    listing_office: Optional["CREAOfficeResponse"] = None
+    
     class Config:
         from_attributes = True
 
@@ -379,6 +436,8 @@ class AgentProfileBase(BaseModel):
     rating: Optional[Decimal] = Field(None, ge=0, le=5)
     total_sales: Optional[int] = Field(None, ge=0)
     active_listings: Optional[int] = Field(None, ge=0)
+    performance: Optional[str] = None
+    platform_status: Optional[str] = None
     bio: Optional[str] = None
     profile_image: Optional[str] = None
     social_media: Optional[SocialMediaLinks] = None
@@ -397,6 +456,8 @@ class AgentProfileUpdate(BaseModel):
     experience: Optional[int] = None
     agency_name: Optional[str] = None
     license_number: Optional[str] = None
+    performance: Optional[str] = None
+    platform_status: Optional[str] = None
     bio: Optional[str] = None
     profile_image: Optional[str] = None
     social_media: Optional[SocialMediaLinks] = None
@@ -406,6 +467,14 @@ class AgentProfileUpdate(BaseModel):
     is_accepting_clients: Optional[bool] = None
     preferred_contact_method: Optional[str] = None
 
+class AdminAgentStatusUpdate(BaseModel):
+    """Admin-only schema for updating agent platform status"""
+    platform_status: PlatformStatus = Field(..., description="Platform status: pending, approved, denied, suspended, verified, premium")
+    performance: Optional[str] = Field(None, description="Performance rating/level")
+    notes: Optional[str] = Field(None, description="Admin notes for the status change")
+
+
+
 class EnhancedAgentResponse(BaseModel):
     # User information (retrieved via user_id relationship)
     user_id: uuid.UUID
@@ -413,6 +482,26 @@ class EnhancedAgentResponse(BaseModel):
     
     # Agent profile information only
     profile_id: Optional[uuid.UUID] = None
+    
+    # CREA Integration Fields
+    crea_agent_key: Optional[str] = None  # CREA MemberKey
+    member_mls_id: Optional[str] = None  # CREA MemberMlsId
+    member_national_association_id: Optional[str] = None  # CREA MemberNationalAssociationId
+    member_aor: Optional[str] = None  # CREA MemberAOR (Association of Realtors)
+    member_aor_key: Optional[str] = None  # CREA MemberAORKey
+    member_country: Optional[str] = None  # CREA MemberCountry
+    member_email_yn: Optional[bool] = None  # CREA MemberEmailYN
+    member_name_prefix: Optional[str] = None  # CREA MemberNamePrefix
+    member_name_suffix: Optional[str] = None  # CREA MemberNameSuffix
+    member_office_phone_ext: Optional[str] = None  # CREA MemberOfficePhoneExt
+    member_toll_free_phone: Optional[str] = None  # CREA MemberTollFreePhone
+    member_type: Optional[str] = None  # CREA MemberType
+    member_postal_code: Optional[str] = None  # CREA MemberPostalCode
+    office_key: Optional[str] = None  # CREA OfficeKey
+    office_national_association_id: Optional[str] = None  # CREA OfficeNationalAssociationId
+    job_title: Optional[str] = None  # CREA JobTitle
+    
+    # Professional Information
     aka: Optional[str] = None
     specialization: Optional[str] = None
     experience: Optional[int] = None
@@ -421,6 +510,8 @@ class EnhancedAgentResponse(BaseModel):
     rating: Optional[Decimal] = Field(None, ge=0, le=5)
     total_sales: Optional[int] = Field(None, ge=0)
     active_listings: Optional[int] = Field(None, ge=0)
+    performance: Optional[str] = None
+    platform_status: Optional[str] = None
     bio: Optional[str] = None
     profile_image: Optional[str] = None
     social_media: Optional[SocialMediaLinks] = None
@@ -437,18 +528,38 @@ class EnhancedAgentResponse(BaseModel):
 # For backward compatibility, create a computed property version
 class EnhancedAgentResponseWithUserData(BaseModel):
     # Combined view that includes user data for easy frontend consumption
-    user_id: uuid.UUID
-    email: str
+    user_id: Optional[uuid.UUID] = None  # Made optional for CREA agents without user accounts
+    email: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     phone: Optional[str] = None
-    full_name: str
-    role: str
-    is_active: bool
-    created_at: datetime
+    full_name: Optional[str] = None
+    role: Optional[str] = "agent"
+    is_active: bool = True
+    created_at: Optional[datetime] = None
     
     # Agent profile information
     profile_id: Optional[uuid.UUID] = None
+    
+    # CREA Integration Fields
+    crea_agent_key: Optional[str] = None  # CREA MemberKey
+    member_mls_id: Optional[str] = None  # CREA MemberMlsId
+    member_national_association_id: Optional[str] = None  # CREA MemberNationalAssociationId
+    member_aor: Optional[str] = None  # CREA MemberAOR (Association of Realtors)
+    member_aor_key: Optional[str] = None  # CREA MemberAORKey
+    member_country: Optional[str] = None  # CREA MemberCountry
+    member_email_yn: Optional[bool] = None  # CREA MemberEmailYN
+    member_name_prefix: Optional[str] = None  # CREA MemberNamePrefix
+    member_name_suffix: Optional[str] = None  # CREA MemberNameSuffix
+    member_office_phone_ext: Optional[str] = None  # CREA MemberOfficePhoneExt
+    member_toll_free_phone: Optional[str] = None  # CREA MemberTollFreePhone
+    member_type: Optional[str] = None  # CREA MemberType
+    member_postal_code: Optional[str] = None  # CREA MemberPostalCode
+    office_key: Optional[str] = None  # CREA OfficeKey
+    office_national_association_id: Optional[str] = None  # CREA OfficeNationalAssociationId
+    job_title: Optional[str] = None  # CREA JobTitle
+    
+    # Professional Information
     aka: Optional[str] = None
     specialization: Optional[str] = None
     experience: Optional[int] = None
@@ -457,6 +568,8 @@ class EnhancedAgentResponseWithUserData(BaseModel):
     rating: Optional[Decimal] = Field(None, ge=0, le=5)
     total_sales: Optional[int] = Field(None, ge=0)
     active_listings: Optional[int] = Field(None, ge=0)
+    performance: Optional[str] = None
+    platform_status: Optional[str] = None
     bio: Optional[str] = None
     profile_image: Optional[str] = None
     social_media: Optional[SocialMediaLinks] = None
@@ -467,6 +580,27 @@ class EnhancedAgentResponseWithUserData(BaseModel):
     preferred_contact_method: Optional[str] = None
     profile_updated_at: Optional[datetime] = None
 
+    class Config:
+        from_attributes = True
+
+# Pagination and filtering schemas
+class AgentListFilters(BaseModel):
+    """Filters for agent list endpoint"""
+    page: int = Field(1, ge=1, description="Page number (starts at 1)")
+    pageSize: int = Field(20, ge=1, le=100, description="Number of items per page (max 100)")
+    q: Optional[str] = Field(None, description="Search query for name/email")
+    city: Optional[str] = Field(None, description="Filter by city")
+    specialization: Optional[str] = Field(None, description="Filter by specialization")
+    sort: Optional[str] = Field("created_at", description="Sort field (created_at, name, rating)")
+
+class PaginatedAgentResponse(BaseModel):
+    """Paginated response for agent list"""
+    agents: List[EnhancedAgentResponseWithUserData]
+    total: int = Field(..., description="Total number of agents")
+    page: int = Field(..., description="Current page number")
+    pageSize: int = Field(..., description="Number of items per page")
+    totalPages: int = Field(..., description="Total number of pages")
+    
     class Config:
         from_attributes = True
 
@@ -494,6 +628,55 @@ class AgentResponse(AgentBase):
     agent_id: int
     full_name: str
     created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# CREA Agent Profile Response (Enhanced)
+class CREAAgentProfileResponse(BaseModel):
+    profile_id: uuid.UUID
+    crea_agent_key: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    agent_email: Optional[str] = None
+    agent_phone: Optional[str] = None
+    agent_mobile: Optional[str] = None
+    agent_fax: Optional[str] = None
+    agency_name: Optional[str] = None
+    license_number: Optional[str] = None
+    member_designation: Optional[str] = None
+    member_status: Optional[str] = None
+    languages: Optional[List[str]] = None
+    specialization: Optional[str] = None
+    experience: Optional[int] = None
+    bio: Optional[str] = None
+    rating: Optional[Decimal] = None
+    total_sales: Optional[int] = None
+    active_listings: Optional[int] = None
+    is_accepting_clients: Optional[bool] = None
+    city: Optional[str] = None
+    province: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+# CREA Office Response
+class CREAOfficeResponse(BaseModel):
+    office_id: uuid.UUID
+    crea_office_key: Optional[str] = None
+    office_name: str
+    office_phone: Optional[str] = None
+    office_email: Optional[str] = None
+    office_website: Optional[str] = None
+    office_address: Optional[str] = None
+    office_city: Optional[str] = None
+    office_province: Optional[str] = None
+    office_postal_code: Optional[str] = None
+    office_country: Optional[str] = None
+    office_type: Optional[str] = None
+    office_status: Optional[str] = None
+    office_fax: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -581,6 +764,45 @@ class ListingResponse(ListingBase):
 # Generic response schemas
 class Message(BaseModel):
     message: str
+
+
+# Daily Tips Schemas
+class DailyTipCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200, description="Tip title")
+    tip: str = Field(..., min_length=1, description="Tip content (supports HTML)")
+    images: Optional[List[str]] = Field(default=[], description="Array of image URLs")
+    is_active: Optional[bool] = Field(default=True, description="Whether tip is active")
+    display_order: Optional[int] = Field(default=0, description="Display order (lower numbers show first)")
+
+
+class DailyTipUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200, description="Tip title")
+    tip: Optional[str] = Field(None, min_length=1, description="Tip content (supports HTML)")
+    images: Optional[List[str]] = Field(None, description="Array of image URLs")
+    is_active: Optional[bool] = Field(None, description="Whether tip is active")
+    display_order: Optional[int] = Field(None, description="Display order (lower numbers show first)")
+
+
+class DailyTipResponse(BaseModel):
+    tip_id: str
+    title: str
+    tip: str
+    images: List[str]
+    is_active: bool
+    display_order: int
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class DailyTipWithCreator(DailyTipResponse):
+    creator: Optional[dict] = Field(None, description="Creator information")
+    
+    class Config:
+        from_attributes = True
 
 class PaginatedResponse(BaseModel):
     items: List[Any]
@@ -766,4 +988,158 @@ class MarketInsightResponse(MarketInsightBase):
     updated_at: datetime
     
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+
+# Agent Onboarding & Profile Management Schemas
+class AgentClaimRequest(BaseModel):
+    """Request to claim an agent profile"""
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=6, max_length=128)
+    phone: str = Field(..., min_length=10, max_length=20)
+    crea_agent_key: Optional[str] = Field(None, max_length=50)
+    member_mls_id: Optional[str] = Field(None, max_length=50)
+
+class AgentPasswordUpdate(BaseModel):
+    """Update agent email and password"""
+    current_password: str = Field(..., min_length=1)
+    new_password: Optional[str] = Field(None, min_length=6, max_length=128)
+    new_email: Optional[EmailStr] = None
+
+# Lead Management Schemas
+class LeadCreate(BaseModel):
+    """Schema for creating a new lead - user provides these fields"""
+    
+    # Agent/Property identification
+    agent_profile_id: uuid.UUID  # Which agent this lead is for
+    listing_key: str  # Property ListingKey from CREA
+    
+    # Required CREA Lead API fields (user input)
+    culture: str = Field(default="en-CA", pattern="^(en-CA|fr-CA)$")  # en-CA or fr-CA
+    sender_name: str = Field(..., min_length=1, max_length=255)  # Lead's full name
+    sender_email_address: EmailStr  # Lead's email
+    message: str = Field(..., min_length=1)  # Lead's message to agent
+    
+    # Optional CREA fields
+    sender_phone_number: Optional[str] = Field(None, max_length=50)
+    preferred_method_contact: Optional[str] = Field(None, pattern="^(email|phone|text)$")
+    sender_phone_extension: Optional[int] = Field(None, ge=0, le=99999)
+    
+    # Optional lead qualification data
+    budget_min: Optional[Decimal] = Field(None, ge=0)
+    budget_max: Optional[Decimal] = Field(None, ge=0)
+    desired_location: Optional[str] = Field(None, max_length=255)
+    property_type_preference: Optional[str] = Field(None, max_length=100)
+    timeline: Optional[str] = Field(None, max_length=100)
+    financing_pre_approved: Optional[bool] = False
+    lead_source: Optional[str] = Field(None, max_length=100)
+    lead_priority: str = Field(default="medium", pattern="^(low|medium|high|urgent)$")
+    notes: Optional[str] = None
+
+    @validator('sender_phone_number')
+    def validate_phone_required_for_non_email(cls, v, values):
+        """Phone number required if preferred contact method is phone or text"""
+        preferred_method = values.get('preferred_method_contact')
+        if preferred_method in ['phone', 'text'] and not v:
+            raise ValueError('Phone number required when preferred contact method is phone or text')
+        return v
+
+    @validator('sender_phone_extension')
+    def validate_extension_requires_phone(cls, v, values):
+        """Phone extension requires phone number"""
+        if v is not None and not values.get('sender_phone_number'):
+            raise ValueError('Phone extension requires phone number')
+        return v
+
+    @validator('budget_max')
+    def validate_budget_range(cls, v, values):
+        """Budget max should be >= budget min"""
+        budget_min = values.get('budget_min')
+        if v is not None and budget_min is not None and v < budget_min:
+            raise ValueError('Maximum budget must be greater than or equal to minimum budget')
+        return v
+
+
+class LeadResponse(BaseModel):
+    """Schema for lead responses - includes all fields"""
+    
+    lead_id: uuid.UUID
+    
+    # Auto-populated from AgentProfile  
+    agent_profile_id: uuid.UUID
+    crea_agent_key: str
+    office_key: Optional[str] = None
+    
+    # CREA Lead API fields
+    culture: str
+    listing_key: str
+    sender_name: str
+    sender_email_address: str
+    sender_phone_number: Optional[str] = None
+    preferred_method_contact: Optional[str] = None
+    sender_phone_extension: Optional[int] = None
+    message: str
+    
+    # Lead tracking
+    lead_status: str
+    lead_source: Optional[str] = None
+    lead_priority: str
+    
+    # CREA submission tracking
+    crea_lead_id: Optional[str] = None
+    crea_submission_status: str
+    crea_submission_error: Optional[str] = None
+    crea_submitted_at: Optional[datetime] = None
+    
+    # Lead qualification
+    budget_min: Optional[Decimal] = None
+    budget_max: Optional[Decimal] = None
+    desired_location: Optional[str] = None
+    property_type_preference: Optional[str] = None
+    timeline: Optional[str] = None
+    financing_pre_approved: bool
+    
+    # Follow-up tracking
+    follow_up_date: Optional[datetime] = None
+    last_contact_date: Optional[datetime] = None
+    contact_attempts: int
+    notes: Optional[str] = None
+    
+    # Timestamps
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class LeadUpdate(BaseModel):
+    """Schema for updating lead status and follow-up info"""
+    
+    lead_status: Optional[str] = Field(None, pattern="^(new|contacted|qualified|converted|closed)$")
+    lead_priority: Optional[str] = Field(None, pattern="^(low|medium|high|urgent)$")
+    follow_up_date: Optional[datetime] = None
+    last_contact_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    budget_min: Optional[Decimal] = Field(None, ge=0)
+    budget_max: Optional[Decimal] = Field(None, ge=0)
+    desired_location: Optional[str] = Field(None, max_length=255)
+    property_type_preference: Optional[str] = Field(None, max_length=100)
+    timeline: Optional[str] = Field(None, max_length=100)
+    financing_pre_approved: Optional[bool] = None
+
+
+class CREALeadSubmission(BaseModel):
+    """Schema for CREA Lead API submission"""
+    
+    Culture: str
+    MemberKey: str
+    ListingKey: str
+    SenderName: str
+    SenderEmailAddress: str
+    SenderPhoneNumber: Optional[int] = None
+    PreferredMethodContact: Optional[str] = None
+    SenderPhoneExtension: Optional[int] = None
+    Message: str 

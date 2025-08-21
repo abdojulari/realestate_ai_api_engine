@@ -7,10 +7,10 @@ import uuid
 from database import get_db
 from schemas import (
     AgentProfileCreate, AgentProfileUpdate, EnhancedAgentResponse, 
-    SocialMediaLinks, Message, EnhancedAgentResponseWithUserData
+    SocialMediaLinks, Message, EnhancedAgentResponseWithUserData, AdminAgentStatusUpdate
 )
 import schemas
-from auth import get_current_active_user, require_agent_or_admin
+from auth import get_current_active_user, require_agent_or_admin, require_admin
 from db_models import User, AgentProfile
 from notification_service import NotificationService
 
@@ -60,6 +60,8 @@ async def get_my_agent_profile(
             "rating": profile.rating,
             "total_sales": profile.total_sales,
             "active_listings": profile.active_listings,
+            "performance": profile.performance,
+            "platform_status": profile.platform_status,
             "bio": profile.bio,
             "profile_image": profile.profile_image,
             "social_media": profile.social_media or {},
@@ -355,3 +357,71 @@ async def delete_my_agent_profile(
     db.commit()
     
     return Message(message="Agent profile deleted successfully")
+
+# Admin endpoints
+@router.put("/{agent_id}/status", response_model=Message)
+async def update_agent_platform_status(
+    agent_id: uuid.UUID,
+    status_update: AdminAgentStatusUpdate,
+    admin_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Update agent platform status (Admin only)."""
+    
+    # Find the agent profile
+    agent_profile = db.query(AgentProfile).filter(
+        AgentProfile.profile_id == agent_id
+    ).first()
+    
+    if not agent_profile:
+        raise HTTPException(
+            status_code=404,
+            detail="Agent profile not found"
+        )
+    
+    # Update platform status and performance
+    agent_profile.platform_status = status_update.platform_status
+    if status_update.performance:
+        agent_profile.performance = status_update.performance
+    
+    db.commit()
+    db.refresh(agent_profile)
+    
+    # Send notification to agent if they have a user account
+    if agent_profile.user:
+        await NotificationService.create_notification(
+            db=db,
+            user_id=str(agent_profile.user.user_id),
+            notification_type="platform_status_update",
+            title=f"Platform Status Updated: {status_update.platform_status}",
+            message=f"""
+            <html>
+            <body>
+                <h2>Platform Status Update</h2>
+                <p>Your platform status has been updated by an administrator.</p>
+                
+                <div style="margin: 20px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+                    <h3>Status Details:</h3>
+                    <ul>
+                        <li><strong>Platform Status:</strong> {status_update.platform_status}</li>
+                        {f'<li><strong>Performance Level:</strong> {status_update.performance}</li>' if status_update.performance else ''}
+                        {f'<li><strong>Admin Notes:</strong> {status_update.notes}</li>' if status_update.notes else ''}
+                    </ul>
+                </div>
+                
+                <p>If you have any questions about this status change, please contact support.</p>
+                
+                <p>Best regards,<br>Real Estate AI Engine Team</p>
+            </body>
+            </html>
+            """,
+            data={
+                "platform_status": status_update.platform_status,
+                "performance": status_update.performance,
+                "admin_notes": status_update.notes,
+                "admin_user_id": str(admin_user.user_id)
+            },
+            send_email=True
+        )
+    
+    return Message(message=f"Agent platform status updated to '{status_update.platform_status}' successfully")

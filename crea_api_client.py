@@ -7,9 +7,13 @@ with automatic token management and authentication.
 
 import requests
 import json
+import logging
 from typing import Dict, List, Optional, Any
 from urllib.parse import urljoin, urlencode
 from api_token_handler import crea_token_handler
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class CREAAPIClient:
     def __init__(self):
@@ -107,15 +111,41 @@ class CREAAPIClient:
         Get property information
         
         Args:
-            property_id: Specific property ID to retrieve
+            property_id: Specific property ID (ListingKey) to retrieve
             filters: Optional OData query parameters
         """
         if property_id:
-            endpoint = f"odata/v1/Property({property_id})"
+            # Use quotes around the property_id as per CREA documentation
+            endpoint = f"odata/v1/Property('{property_id}')"
         else:
             endpoint = "odata/v1/Property"
         
         return self._get(endpoint, params=filters)
+    
+    def get_property_replication(self, filters: Dict = None, since_date: str = None) -> Dict:
+        """
+        Get properties from PropertyReplication endpoint for bulk data access
+        This endpoint provides better access to the full property dataset
+        
+        Usage:
+            # Get all properties updated since yesterday
+            result = crea_api.get_property_replication(since_date='2024-01-25T00:00:00.00Z')
+            
+            # Or with filters
+            filters = {'$filter': 'ModificationTimestamp gt 2024-01-25T00:00:00.00Z'}
+            result = crea_api.get_property_replication(filters)
+        
+        Args:
+            filters: Optional OData query parameters ($filter, $top, $orderby, etc.)
+            since_date: ISO date string for filtering by ModificationTimestamp
+        """
+        if since_date:
+            # Use the () format as per CREA documentation
+            endpoint = f"odata/v1/Property/PropertyReplication()?$filter=ModificationTimestamp gt {since_date}"
+            return self._get(endpoint, params=None)
+        else:
+            endpoint = "odata/v1/Property/PropertyReplication"
+            return self._get(endpoint, params=filters)
 
     def search_properties(self, 
                          location: str = None,
@@ -352,16 +382,70 @@ class CREAAPIClient:
     def _filter_properties_client_side(self, properties: List[Dict], province: str = None, status_filter: str = None) -> List[Dict]:
         """
         Filter properties client-side to avoid CREA API OData limitations
+        Fixed to handle real CREA field names and values
         """
         filtered = properties
         
-        # Filter by province
-        if province:
-            filtered = [p for p in filtered if p.get('StateOrProvince') == province]
+        # DEBUG: Print sample property fields to understand the structure
+        if properties and len(properties) > 0:
+            sample = properties[0]
+            print(f"🔍 Sample property fields: {list(sample.keys())[:10]}")
+            
+            # Check province field variations
+            province_fields = ['StateOrProvince', 'Province', 'State', 'PostalCode', 'City']
+            for field in province_fields:
+                if field in sample:
+                    print(f"🌍 {field}: {sample.get(field)}")
+            
+            # Check status field variations  
+            status_fields = ['StandardStatus', 'Status', 'ListingStatus', 'PropertyStatus']
+            for field in status_fields:
+                if field in sample:
+                    print(f"📊 {field}: {sample.get(field)}")
         
-        # Filter by status
+        # Filter by province (more flexible matching)
+        if province:
+            original_count = len(filtered)
+            
+            # Try multiple province field variations and matching strategies
+            province_lower = province.lower()
+            filtered = [p for p in filtered if (
+                # Direct match on StateOrProvince
+                p.get('StateOrProvince', '').lower() == province_lower or
+                # Direct match on Province
+                p.get('Province', '').lower() == province_lower or
+                # Partial match for abbreviations (AB for Alberta)
+                p.get('StateOrProvince', '').lower().startswith(province_lower[:2]) or
+                # Check postal code for province (T for Alberta, V for BC, etc.)
+                (province_lower == 'alberta' and p.get('PostalCode', '').startswith('T')) or
+                (province_lower == 'ab' and p.get('PostalCode', '').startswith('T')) or
+                (province_lower == 'british columbia' and p.get('PostalCode', '').startswith('V')) or
+                (province_lower == 'bc' and p.get('PostalCode', '').startswith('V')) or
+                (province_lower == 'ontario' and p.get('PostalCode', '').startswith(('K', 'L', 'M', 'N', 'P'))) or
+                (province_lower == 'on' and p.get('PostalCode', '').startswith(('K', 'L', 'M', 'N', 'P')))
+            )]
+            
+            print(f"🌍 Province filter '{province}': {original_count} -> {len(filtered)} properties")
+        
+        # Filter by status (more flexible matching)
         if status_filter:
-            filtered = [p for p in filtered if p.get('StandardStatus') == status_filter]
+            original_count = len(filtered)
+            status_lower = status_filter.lower()
+            
+            filtered = [p for p in filtered if (
+                # Direct match on StandardStatus
+                p.get('StandardStatus', '').lower() == status_lower or
+                # Direct match on Status
+                p.get('Status', '').lower() == status_lower or
+                # Partial matches for common statuses
+                status_lower in p.get('StandardStatus', '').lower() or
+                status_lower in p.get('Status', '').lower() or
+                # Common aliases
+                (status_lower == 'active' and p.get('StandardStatus', '').lower() in ['active', 'new', 'pending']) or
+                (status_lower == 'sold' and p.get('StandardStatus', '').lower() in ['sold', 'closed', 'completed'])
+            )]
+            
+            print(f"📊 Status filter '{status_filter}': {original_count} -> {len(filtered)} properties")
         
         return filtered
     
@@ -371,7 +455,7 @@ class CREAAPIClient:
         """
         import requests
         
-        headers = self.get_authorization_header()
+        headers = crea_token_handler.get_authorization_header()
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         
@@ -470,6 +554,120 @@ class CREAAPIClient:
                 "error": str(e),
                 "base_url": self.base_url
             }
+    
+    def get_member(self, member_key: str) -> Dict:
+        """
+        Get member (agent) information from CREA DDF API
+        
+        Args:
+            member_key: CREA MemberKey (agent ID)
+            
+        Returns:
+            Dict containing member information
+            
+        Raises:
+            requests.HTTPError: If the request fails
+        """
+        endpoint = f"odata/v1/Member/{member_key}"
+        return self._get(endpoint)
+    
+    def get_office(self, office_key: str) -> Dict:
+        """
+        Get office information from CREA DDF API
+        
+        Args:
+            office_key: CREA OfficeKey
+            
+        Returns:
+            Dict containing office information
+            
+        Raises:
+            requests.HTTPError: If the request fails
+        """
+        endpoint = f"odata/v1/Office/{office_key}"
+        return self._get(endpoint)
+
+    def create_lead(self, lead_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Submit a lead to CREA using the Lead API
+        
+        Args:
+            lead_data: Dictionary containing lead information with CREA API format:
+                - Culture: str (en-CA or fr-CA)
+                - MemberKey: str (CREA agent key)
+                - ListingKey: str (Property listing key)
+                - SenderName: str (Lead's name)
+                - SenderEmailAddress: str (Lead's email)
+                - SenderPhoneNumber: int or None (Lead's phone)
+                - PreferredMethodContact: str or None (email, phone, text)
+                - SenderPhoneExtension: int or None (Phone extension)
+                - Message: str (Lead's message)
+        
+        Returns:
+            Dict containing CREA's response with LeadId if successful, None if failed
+            
+        Raises:
+            requests.HTTPError: If the request fails
+        """
+        endpoint = "v1/Lead/CreateLead"
+        
+        try:
+            # Ensure we have a valid access token
+            if not self.access_token or self._is_token_expired():
+                self._authenticate()
+            
+            # Prepare headers
+            headers = {
+                'Authorization': f'Bearer {self.access_token}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+            
+            # Clean the payload - remove None values to match CREA API expectations
+            clean_payload = {k: v for k, v in lead_data.items() if v is not None}
+            
+            logger.info(f"📤 Submitting lead to CREA for agent {clean_payload.get('MemberKey')} on listing {clean_payload.get('ListingKey')}")
+            logger.debug(f"Lead payload: {clean_payload}")
+            
+            # Make the POST request
+            url = f"{self.base_url}/{endpoint}"
+            response = self.session.post(
+                url,
+                json=clean_payload,
+                headers=headers,
+                timeout=self.timeout
+            )
+            
+            logger.info(f"POST {url} - Status: {response.status_code}")
+            
+            # Check for successful response
+            response.raise_for_status()
+            
+            # Parse response
+            if response.status_code == 201:  # Created
+                result = response.json()
+                logger.info(f"✅ Lead successfully submitted to CREA. Lead ID: {result.get('LeadId')}")
+                return result
+            else:
+                logger.warning(f"⚠️  Unexpected response status: {response.status_code}")
+                return response.json() if response.content else {}
+                
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                logger.warning("🔑 Token expired during lead submission, re-authenticating...")
+                self._authenticate()
+                # Retry once with new token
+                return self.create_lead(lead_data)
+            else:
+                logger.error(f"❌ HTTP error submitting lead: {e}")
+                logger.error(f"Response content: {e.response.text if e.response else 'No response'}")
+                raise
+        except requests.exceptions.RequestException as e:
+            logger.error(f"❌ Request error submitting lead: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"❌ Unexpected error submitting lead: {e}")
+            raise
 
 # Global instance for easy access
 crea_api = CREAAPIClient() 

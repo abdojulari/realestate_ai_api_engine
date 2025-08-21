@@ -17,7 +17,7 @@ load_dotenv()
 # JWT configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -124,17 +124,79 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+# Dependency to get current active user with platform status check for agents
+async def get_current_active_user_with_platform_check(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> User:
+    """Get the current active user with platform status validation for agents."""
+    if not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    
+    # For agents, check platform status
+    if current_user.role == "agent":
+        from db_models import AgentProfile
+        agent_profile = db.query(AgentProfile).filter(
+            AgentProfile.user_id == current_user.user_id
+        ).first()
+        
+        if agent_profile and agent_profile.platform_status:
+            # Only allow approved, verified, or premium agents to access the platform
+            allowed_statuses = ["approved", "verified", "premium"]
+            if agent_profile.platform_status not in allowed_statuses:
+                status_messages = {
+                    "pending": "Your agent profile is pending admin approval",
+                    "denied": "Your agent application has been denied. Please contact support",
+                    "suspended": "Your agent account has been suspended. Please contact support"
+                }
+                message = status_messages.get(
+                    agent_profile.platform_status, 
+                    f"Agent access restricted. Platform status: {agent_profile.platform_status}"
+                )
+                raise HTTPException(
+                    status_code=403, 
+                    detail=message
+                )
+    
+    return current_user
+
 # Role-based authorization decorators
 class RoleChecker:
-    def __init__(self, allowed_roles: List[str]):
+    def __init__(self, allowed_roles: List[str], check_platform_status: bool = True):
         self.allowed_roles = allowed_roles
+        self.check_platform_status = check_platform_status
     
-    def __call__(self, current_user: User = Depends(get_current_active_user)) -> User:
+    def __call__(self, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)) -> User:
         if current_user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Operation not permitted"
             )
+        
+        # Check platform status for agents if enabled
+        if self.check_platform_status and current_user.role == "agent":
+            from db_models import AgentProfile
+            agent_profile = db.query(AgentProfile).filter(
+                AgentProfile.user_id == current_user.user_id
+            ).first()
+            
+            if agent_profile and agent_profile.platform_status:
+                allowed_statuses = ["approved", "verified", "premium"]
+                if agent_profile.platform_status not in allowed_statuses:
+                    status_messages = {
+                        "pending": "Your agent profile is pending admin approval",
+                        "denied": "Your agent application has been denied. Please contact support",
+                        "suspended": "Your agent account has been suspended. Please contact support"
+                    }
+                    message = status_messages.get(
+                        agent_profile.platform_status, 
+                        f"Agent access restricted. Platform status: {agent_profile.platform_status}"
+                    )
+                    raise HTTPException(
+                        status_code=403, 
+                        detail=message
+                    )
+        
         return current_user
 
 # Specific role dependencies

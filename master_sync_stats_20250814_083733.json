@@ -1,0 +1,52 @@
+{
+  "total_start_time": "2025-08-14 08:36:26.321134",
+  "property_sync": {
+    "total_listing_keys": 500,
+    "successful_fetches": 500,
+    "failed_fetches": 0,
+    "new_properties": 500,
+    "updated_properties": 0,
+    "errors": []
+  },
+  "agent_sync": {
+    "properties_processed": 100,
+    "unique_agent_keys": 105,
+    "unique_office_keys": 80,
+    "agents_created": 0,
+    "agents_updated": 0,
+    "offices_created": 0,
+    "offices_updated": 0,
+    "api_calls_made": 0,
+    "api_errors": 0,
+    "errors": []
+  },
+  "housing_data_sync": {
+    "status": "success",
+    "regions": 4
+  },
+  "province_sync": {
+    "AB": {
+      "status": "success",
+      "new_properties": 0,
+      "updated_properties": 0,
+      "new_agents": 0
+    },
+    "BC": {
+      "status": "success",
+      "new_properties": 0,
+      "updated_properties": 0,
+      "new_agents": 0
+    },
+    "ON": {
+      "status": "success",
+      "new_properties": 0,
+      "updated_properties": 0,
+      "new_agents": 0
+    }
+  },
+  "errors": [],
+  "warnings": [
+    "DRY RUN MODE - No changes will be saved",
+    "QUICK MODE - Limited scope sync"
+  ]
+}

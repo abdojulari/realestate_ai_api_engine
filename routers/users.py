@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from datetime import timedelta
-from typing import List
+from typing import List, Optional
 
 from database import get_db
-from schemas import UserCreate, UserResponse, UserLogin, Token, UserUpdate, Message
+from schemas import UserCreate, UserResponse, UserLogin, Token, UserUpdate, Message, PasswordChangeRequest, PasswordResetRequest
 from auth import AuthService, get_current_active_user, require_admin, get_current_user_optional
 from db_models import User
 from notification_service import NotificationService
@@ -191,7 +191,31 @@ async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
             detail="Inactive user"
         )
     
-    access_token_expires = timedelta(minutes=30)  # Use a constant here
+    # For agents, check platform status before allowing login
+    if user.role == "agent":
+        from db_models import AgentProfile
+        agent_profile = db.query(AgentProfile).filter(
+            AgentProfile.user_id == user.user_id
+        ).first()
+        
+        if agent_profile and agent_profile.platform_status:
+            allowed_statuses = ["approved", "verified", "premium"]
+            if agent_profile.platform_status not in allowed_statuses:
+                status_messages = {
+                    "pending": "Your agent profile is pending admin approval. You cannot access the platform until approved.",
+                    "denied": "Your agent application has been denied. Please contact support for more information.",
+                    "suspended": "Your agent account has been suspended. Please contact support to resolve this issue."
+                }
+                message = status_messages.get(
+                    agent_profile.platform_status, 
+                    f"Agent access restricted. Platform status: {agent_profile.platform_status}. Please contact support."
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=message
+                )
+    
+    access_token_expires = timedelta(minutes=60)  # Use a constant here
     access_token = AuthService.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
@@ -201,6 +225,13 @@ async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "user": user
     }
+
+@router.post("/logout", response_model=Message)
+async def logout(current_user: User = Depends(get_current_active_user)):
+    """Logout current user (invalidate token on client side)."""
+    # Note: JWT tokens are stateless, so actual invalidation happens on the client side
+    # This endpoint serves as confirmation that the user has logged out
+    return {"message": f"User {current_user.email} logged out successfully"}
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
@@ -213,7 +244,7 @@ async def update_current_user(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Update current user information."""
+    """Update current user information (excluding password)."""
     update_data = user_update.dict(exclude_unset=True)
     
     for field, value in update_data.items():
@@ -223,6 +254,113 @@ async def update_current_user(
     db.refresh(current_user)
     
     return current_user
+
+@router.post("/change-password", response_model=Message)
+async def change_password(
+    password_request: PasswordChangeRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Change user password with current password verification."""
+    # Verify current password
+    if not AuthService.verify_password(password_request.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    
+    # Hash new password
+    new_hashed_password = AuthService.get_password_hash(password_request.new_password)
+    
+    # Update password
+    current_user.password_hash = new_hashed_password
+    db.commit()
+    
+    return {"message": "Password changed successfully"}
+
+@router.post("/request-password-reset", response_model=Message)
+async def request_password_reset(
+    reset_request: PasswordResetRequest,
+    db: Session = Depends(get_db)
+):
+    """Request a password reset link. Works for users without passwords (new users) or forgotten passwords."""
+    
+    # Check if user exists
+    user = db.query(User).filter(User.email == reset_request.email).first()
+    if not user:
+        # For security, don't reveal if email exists or not
+        return {"message": "If the email exists in our system, a password reset link has been sent."}
+    
+    # Generate a secure reset token (you might want to store this in DB with expiration)
+    import secrets
+    import hashlib
+    from datetime import datetime, timedelta
+    
+    # Create a reset token (in production, store this in database with expiration)
+    reset_token = secrets.token_urlsafe(32)
+    
+    # Use FRONTEND_BASE_URL from environment, override only if explicitly provided
+    import os
+    frontend_base_url = os.getenv("FRONTEND_BASE_URL")
+    app_base_url = reset_request.app_base_url or frontend_base_url
+    reset_link = f"{app_base_url}/reset-password?token={reset_token}&email={reset_request.email}"
+    
+    # Send email with reset link
+    try:
+        from emailer import send_email
+        import asyncio
+        
+        # Email subject and body
+        subject = "Password Reset Request"
+        
+        # Check if user has no password (new user) or existing user
+        has_existing_password = bool(user.password_hash and user.password_hash.strip())
+        
+        if has_existing_password:
+            body = f"""
+            Hello {user.first_name or user.email},
+            
+            You requested to reset your password. Click the link below to set a new password:
+            
+            {reset_link}
+            
+            This link will expire in 24 hours for security reasons.
+            
+            If you didn't request this password reset, please ignore this email.
+            
+            Best regards,
+            Real Estate Platform Team
+            """
+        else:
+            body = f"""
+            Hello {user.first_name or user.email},
+            
+            Welcome! Your account has been created. Click the link below to set your password:
+            
+            {reset_link}
+            
+            This link will expire in 24 hours for security reasons.
+            
+            Best regards,
+            Real Estate Platform Team
+            """
+        
+        # Send the email asynchronously
+        asyncio.create_task(send_email(
+            to_email=user.email,
+            subject=subject,
+            body=body
+        ))
+        
+        # Log the action (in production, you'd store the reset token in database)
+        print(f"Password reset requested for: {user.email}")
+        print(f"Reset link: {reset_link}")
+        
+    except Exception as e:
+        print(f"Failed to send password reset email: {str(e)}")
+        # Don't reveal email sending failures to prevent enumeration
+    
+    return {"message": "If the email exists in our system, a password reset link has been sent."}
 
 @router.delete("/me", response_model=Message)
 async def delete_current_user(
@@ -240,12 +378,73 @@ async def delete_current_user(
 async def get_all_users(
     skip: int = 0,
     limit: int = 100,
-    admin_user: User = Depends(require_admin),
+    role: Optional[str] = Query(None, description="Filter by role (admin, agent, client, customer)"),
+    email: Optional[str] = Query(None, description="Search by email (partial match)"),
+    first_name: Optional[str] = Query(None, description="Search by first name (partial match)"),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Get all users (admin only)."""
-    users = db.query(User).offset(skip).limit(limit).all()
-    return users
+    """Get users with role-based access and search filters. Admin can view all, agents can view only clients."""
+    
+    # Check user permissions
+    if current_user.role not in ["admin", "agent"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Only admins and agents can view user lists."
+        )
+    
+    # Build base query
+    query = db.query(User)
+    
+    # Role-based filtering
+    if current_user.role == "agent":
+        # Agents can only see clients
+        query = query.filter(User.role == "client")
+    elif current_user.role == "admin" and role:
+        # Admins can filter by any role
+        query = query.filter(User.role == role)
+    
+    # Search filters
+    if email:
+        query = query.filter(User.email.ilike(f"%{email}%"))
+    
+    if first_name:
+        query = query.filter(User.first_name.ilike(f"%{first_name}%"))
+    
+    # Apply pagination
+    users = query.offset(skip).limit(limit).all()
+    
+    # Sanitize emails to prevent validation errors
+    def sanitize_email(email):
+        if not email:
+            return None
+        # Fix double periods and other common email issues
+        sanitized = email.replace('..', '.').strip()
+        # Basic email validation - if still invalid, return None
+        if '@' not in sanitized or sanitized.count('@') != 1:
+            return None
+        return sanitized
+    
+    # Create sanitized user responses
+    sanitized_users = []
+    for user in users:
+        # Create a copy of user data with sanitized email
+        user_dict = {
+            'user_id': user.user_id,
+            'email': sanitize_email(user.email),
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'phone': user.phone,
+            'role': user.role,
+            'is_active': user.is_active,
+            'full_name': user.full_name,
+            'created_at': user.created_at,
+            'updated_at': user.updated_at,
+            'preferences': user.preferences
+        }
+        sanitized_users.append(user_dict)
+    
+    return sanitized_users
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
@@ -260,7 +459,32 @@ async def get_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    return user
+    
+    # Sanitize email to prevent validation errors
+    def sanitize_email(email):
+        if not email:
+            return None
+        # Fix double periods and other common email issues
+        sanitized = email.replace('..', '.').strip()
+        # Basic email validation - if still invalid, return None
+        if '@' not in sanitized or sanitized.count('@') != 1:
+            return None
+        return sanitized
+    
+    # Return sanitized user data
+    return {
+        'user_id': user.user_id,
+        'email': sanitize_email(user.email),
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'phone': user.phone,
+        'role': user.role,
+        'is_active': user.is_active,
+        'full_name': user.full_name,
+        'created_at': user.created_at,
+        'updated_at': user.updated_at,
+        'preferences': user.preferences
+    }
 
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user(

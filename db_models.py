@@ -62,6 +62,7 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     property_interests = relationship("PropertyInterest", foreign_keys="PropertyInterest.user_id", back_populates="user", cascade="all, delete-orphan")
     agent_profile = relationship("AgentProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    created_tips = relationship("DailyTip", back_populates="creator", cascade="all, delete-orphan")
     
     @hybrid_property
     def full_name(self):
@@ -85,6 +86,25 @@ class Property(Base):
     
     property_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
+    # CREA Integration
+    listing_key = Column(String(50), unique=True, index=True, nullable=True)  # CREA ListingKey
+    modification_timestamp = Column(TIMESTAMP, nullable=True, index=True)  # CREA ModificationTimestamp
+    
+    # CREA Agent and Office relationships
+    listing_agent_id = Column(String(50), nullable=True, index=True)  # CREA ListAgentKey
+    listing_office_id = Column(String(50), nullable=True, index=True)  # CREA ListOfficeKey
+    co_listing_agent_id = Column(String(50), nullable=True)  # CREA CoListAgentKey
+    co_listing_agent_id2 = Column(String(50), nullable=True)  # CREA CoListAgentKey2
+    co_listing_agent_id3 = Column(String(50), nullable=True)  # CREA CoListAgentKey3
+    co_listing_office_id = Column(String(50), nullable=True)  # CREA CoListOfficeKey
+    co_listing_office_id2 = Column(String(50), nullable=True)  # CREA CoListOfficeKey2
+    co_listing_office_id3 = Column(String(50), nullable=True)  # CREA CoListOfficeKey3
+    
+    # CREA Additional fields
+    mls_listing_url = Column(String(500), nullable=True)  # CREA ListingURL
+    common_interest = Column(String(100), nullable=True)  # CREA CommonInterest
+    accessibility_features = Column(JSONB, default=list)  # CREA AccessibilityFeatures
+    
     # Basic Info
     title = Column(String(255), nullable=False)
     description = Column(Text)
@@ -105,6 +125,7 @@ class Property(Base):
     
     # Property Details
     property_type_id = Column(Integer, ForeignKey('property_types.type_id'))
+    property_sub_type = Column(String(100), nullable=True)  # CREA PropertySubType
     bedrooms = Column(Integer, default=0, index=True)
     bathrooms = Column(DECIMAL(3, 1), default=0, index=True)
     square_feet = Column(Integer)
@@ -122,9 +143,31 @@ class Property(Base):
     status = Column(String(20), default='available', index=True)
     is_new = Column(Boolean, default=False, index=True)
     
+    # CREA Agent & Office Information
+    listing_agent_id = Column(String(50), nullable=True, index=True)  # CREA ListAgentKey
+    listing_office_id = Column(String(50), nullable=True, index=True)  # CREA ListOfficeKey
+    co_listing_agent_id = Column(String(50), nullable=True)  # CREA CoListAgentKey
+    co_listing_agent_id2 = Column(String(50), nullable=True)  # CREA CoListAgentKey2
+    co_listing_agent_id3 = Column(String(50), nullable=True)  # CREA CoListAgentKey3
+    co_listing_office_id = Column(String(50), nullable=True)  # CREA CoListOfficeKey
+    co_listing_office_id2 = Column(String(50), nullable=True)  # CREA CoListOfficeKey2
+    co_listing_office_id3 = Column(String(50), nullable=True)  # CREA CoListOfficeKey3
+    
+    # CREA Marketing & Financial Fields
+    tax_annual_amount = Column(DECIMAL(10, 2), nullable=True)  # CREA TaxAnnualAmount
+    days_on_market = Column(Integer, nullable=True)  # Calculated field
+    zoning = Column(String(255), nullable=True)  # CREA Zoning
+    availability_date = Column(TIMESTAMP, nullable=True)  # CREA AvailabilityDate
+    mls_listing_url = Column(String(500), nullable=True)  # CREA ListingURL
+    common_interest = Column(String(100), nullable=True)  # CREA CommonInterest
+    accessibility_features = Column(JSONB, default=list, nullable=True)  # CREA AccessibilityFeatures
+    
     # Media
     primary_image = Column(String(500))
     images = Column(JSONB)
+    
+    # Additional amenities from CREA that don't map to our standard amenities
+    other_amenities = Column(JSONB, default=list)  # Array of unmapped CREA amenities
     
     # Timestamps
     list_date = Column(TIMESTAMP, default=func.now())
@@ -143,6 +186,24 @@ class Property(Base):
     neighbourhoods = relationship("Neighbourhood", back_populates="property", cascade="all, delete-orphan")
     schools = relationship("School", back_populates="property", cascade="all, delete-orphan")
     market_insight = relationship("MarketInsight", back_populates="property", uselist=False, cascade="all, delete-orphan")
+    rooms = relationship("Room", back_populates="property", cascade="all, delete-orphan")
+    
+    # Agent and Office relationships (using string-based foreign keys, not object relationships)
+    # These are CREA keys, not actual foreign keys to our tables
+    # We'll handle the relationships in the API responses programmatically
+    
+    # Indexes for search optimization
+    __table_args__ = (
+        Index('idx_properties_location', 'city', 'province'),
+        Index('idx_properties_price', 'price'),
+        Index('idx_properties_type', 'property_type_id'),
+        Index('idx_properties_bedrooms', 'bedrooms'),
+        Index('idx_properties_status', 'status'),
+        Index('idx_properties_listing_key', 'listing_key'),
+        Index('idx_properties_modification_timestamp', 'modification_timestamp'),
+        Index('idx_properties_listing_agent', 'listing_agent_id'),
+        Index('idx_properties_listing_office', 'listing_office_id'),
+    )
 
 # Property Images (Enhanced image management)
 class PropertyImage(Base):
@@ -280,28 +341,107 @@ class View(Base):
     # Relationships
     properties = relationship("Property", secondary=property_views, back_populates="views")
 
+# Real Estate Office model (CREA Office data)
+class Office(Base):
+    __tablename__ = "offices"
+    
+    office_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # CREA Integration
+    crea_office_key = Column(String(50), unique=True, index=True, nullable=True)  # CREA OfficeKey
+    
+    # Office Information
+    office_name = Column(String(255), nullable=False)
+    office_phone = Column(String(50))
+    office_email = Column(String(255))
+    office_website = Column(String(500))
+    
+    # Address
+    office_address = Column(String(255))
+    office_city = Column(String(100))
+    office_province = Column(String(100))
+    office_postal_code = Column(String(20))
+    office_country = Column(String(100))
+    
+    # Additional CREA fields
+    office_type = Column(String(100))  # CREA OfficeType if available
+    office_status = Column(String(50))  # Active, Inactive, etc.
+    
+    # Contact & Social
+    office_fax = Column(String(50))
+    social_media = Column(JSONB, default={})  # Social media links
+    
+    # Timestamps
+    created_at = Column(TIMESTAMP, default=func.now())
+    updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    agents = relationship("AgentProfile", back_populates="office")
+    
+    __table_args__ = (
+        Index('idx_offices_crea_key', 'crea_office_key'),
+        Index('idx_offices_city_province', 'office_city', 'office_province'),
+    )
+
 # Enhanced Agent Profiles (extends User table)
 class AgentProfile(Base):
     __tablename__ = "agent_profiles"
     
     profile_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey('users.user_id', ondelete='CASCADE'), unique=True, nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.user_id', ondelete='CASCADE'), unique=True, nullable=True)  # Made nullable for CREA agents
+    
+    # CREA Integration
+    crea_agent_key = Column(String(50), unique=True, index=True, nullable=True)  # CREA MemberKey
+    member_mls_id = Column(String(50), nullable=True)  # CREA MemberMlsId
+    member_national_association_id = Column(String(50), nullable=True)  # CREA MemberNationalAssociationId
+    member_aor = Column(String(100), nullable=True)  # CREA MemberAOR (Association of Realtors)
+    member_aor_key = Column(String(50), nullable=True)  # CREA MemberAORKey
+    member_country = Column(String(50), nullable=True)  # CREA MemberCountry
+    member_email_yn = Column(Boolean, nullable=True)  # CREA MemberEmailYN (whether agent allows email contact)
+    member_name_prefix = Column(String(20), nullable=True)  # CREA MemberNamePrefix (Mr., Mrs., Dr., etc.)
+    member_name_suffix = Column(String(20), nullable=True)  # CREA MemberNameSuffix (Jr., Sr., III, etc.)
+    member_office_phone_ext = Column(String(20), nullable=True)  # CREA MemberOfficePhoneExt
+    member_toll_free_phone = Column(String(50), nullable=True)  # CREA MemberTollFreePhone
+    member_type = Column(String(50), nullable=True)  # CREA MemberType (Salesperson, Broker, etc.)
+    member_postal_code = Column(String(20), nullable=True)  # CREA MemberPostalCode
+    office_key = Column(String(50), nullable=True)  # CREA OfficeKey (linked office)
+    office_national_association_id = Column(String(50), nullable=True)  # CREA OfficeNationalAssociationId
+    job_title = Column(String(100), nullable=True)  # CREA JobTitle
     
     # Professional Information
     aka = Column(String(255))  # Professional nickname/tagline
+    first_name = Column(String(100))  # Agent first name
+    last_name = Column(String(100))  # Agent last name
+    middle_name = Column(String(100))  # Agent middle name
     specialization = Column(String(255))  # e.g., "Luxury Homes", "Commercial Real Estate"
     experience = Column(Integer)  # Years of experience
     agency_name = Column(String(255))
     license_number = Column(String(100))
     
+    # Office relationship
+    office_id = Column(UUID(as_uuid=True), ForeignKey('offices.office_id'), nullable=True)
+    
+    # Contact Information
+    agent_email = Column(String(255))
+    agent_phone = Column(String(50))
+    agent_mobile = Column(String(50))
+    agent_fax = Column(String(50))
+    
     # Performance Metrics
     rating = Column(DECIMAL(3, 2), default=0.0)  # Average rating (0.0 to 5.0)
     total_sales = Column(Integer, default=0)
     active_listings = Column(Integer, default=0)
+    performance = Column(String(50))  # Performance rating/level
+    platform_status = Column(String(50))  # Platform/verification status
     
     # Profile Content
     bio = Column(Text)
     profile_image = Column(String(500))
+    
+    # CREA Professional Details
+    member_designation = Column(String(255))  # Professional designations
+    member_status = Column(String(50))  # Active, Inactive, etc.
+    languages = Column(JSONB, default=[])  # Languages spoken
     
     # Social Media Links
     social_media = Column(JSONB, default={})  # Store as JSON: {"whatsapp": "+1234567890", "facebook": "username", etc.}
@@ -315,6 +455,15 @@ class AgentProfile(Base):
     is_accepting_clients = Column(Boolean, default=True)
     preferred_contact_method = Column(String(50))  # "email", "phone", "whatsapp", etc.
     
+    # Additional CREA Fields (added in migration)
+    member_address1 = Column(String(255))  # CREA MemberAddress1
+    member_address2 = Column(String(255))  # CREA MemberAddress2
+    member_nickname = Column(String(100))  # CREA MemberNickname
+    member_pager = Column(String(50))  # CREA MemberPager
+    original_entry_timestamp = Column(TIMESTAMP)  # CREA OriginalEntryTimestamp
+    modification_timestamp = Column(TIMESTAMP)  # CREA ModificationTimestamp
+    crea_media_data = Column(JSONB, default=[])  # CREA Media array
+    
     # Timestamps
     created_at = Column(TIMESTAMP, default=func.now())
     updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())
@@ -322,14 +471,29 @@ class AgentProfile(Base):
     # Indexes for search optimization
     __table_args__ = (
         Index('idx_agent_profile_user_id', 'user_id'),
+        Index('idx_agent_profile_crea_key', 'crea_agent_key'),
         Index('idx_agent_profile_city', 'city'),
+        Index('idx_agent_profile_name', 'first_name', 'last_name'),
         Index('idx_agent_profile_specialization', 'specialization'),
         Index('idx_agent_profile_accepting_clients', 'is_accepting_clients'),
         Index('idx_agent_profile_rating', 'rating'),
+        Index('idx_agent_profile_mls_id', 'member_mls_id'),
+        Index('idx_agent_profile_national_id', 'member_national_association_id'),
+        Index('idx_agent_profile_office_key', 'office_key'),
+        Index('idx_agent_profile_member_type', 'member_type'),
+        Index('idx_agent_profile_aor', 'member_aor'),
     )
     
     # Relationships
     user = relationship("User", back_populates="agent_profile")
+    office = relationship("Office", back_populates="agents")
+    leads = relationship("Lead", back_populates="agent_profile")
+    # Note: client_relationships and property_interests are disabled for CREA agents
+    # as they reference user_id which may be null for CREA imported agents
+    
+    @hybrid_property
+    def full_name(self):
+        return f"{self.first_name or ''} {self.last_name or ''}".strip()
 
 # Legacy Agent table removed - now using User + AgentProfile system
 
@@ -558,4 +722,121 @@ class MarketInsight(Base):
     )
     
     # Relationships
-    property = relationship("Property", back_populates="market_insight") 
+    property = relationship("Property", back_populates="market_insight")
+
+
+# Room Model (for detailed room information from CREA)
+class Room(Base):
+    __tablename__ = "rooms"
+    
+    room_id = Column(Integer, primary_key=True, index=True)
+    property_id = Column(UUID(as_uuid=True), ForeignKey('properties.property_id', ondelete='CASCADE'), nullable=False)
+    room_type = Column(String(100), nullable=False)  # CREA RoomType
+    room_level = Column(String(50), nullable=True)   # CREA RoomLevel
+    room_dimensions = Column(String(50), nullable=True)  # CREA RoomDimensions
+    room_description = Column(Text, nullable=True)   # CREA RoomDescription
+    created_at = Column(TIMESTAMP, default=func.now())
+    updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())
+    
+    __table_args__ = (
+        Index('idx_rooms_property_id', 'property_id'),
+        Index('idx_rooms_type', 'room_type'),
+    )
+    
+    # Relationships
+    property = relationship("Property", back_populates="rooms")
+
+
+# Daily Tips Model (Admin-only content)
+class DailyTip(Base):
+    __tablename__ = "daily_tips"
+    
+    tip_id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String(200), nullable=False)
+    tip = Column(Text, nullable=False)
+    images = Column(JSONB, default=list)  # Array of image URLs/paths
+    is_active = Column(Boolean, default=True, index=True)
+    display_order = Column(Integer, default=0, index=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    creator = relationship("User", back_populates="created_tips")
+    
+    # Indexes for better performance
+    __table_args__ = (
+        Index('idx_dailytips_active_order', 'is_active', 'display_order'),
+        Index('idx_dailytips_created_date', 'created_at', postgresql_using='btree', postgresql_ops={'created_at': 'DESC'}),
+    )
+
+# Lead Management System
+class Lead(Base):
+    """
+    Lead model for capturing and managing real estate leads
+    Automatically syncs with AgentProfile for CREA integration
+    """
+    __tablename__ = "leads"
+    
+    lead_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # Auto-populated from AgentProfile
+    agent_profile_id = Column(UUID(as_uuid=True), ForeignKey('agent_profiles.profile_id'), nullable=False)
+    crea_agent_key = Column(String(50), nullable=False)  # Auto-filled from AgentProfile
+    office_key = Column(String(50), nullable=True)  # Auto-filled from AgentProfile
+    
+    # Required CREA Lead API fields
+    culture = Column(String(10), default='en-CA', nullable=False)  # en-CA or fr-CA
+    listing_key = Column(String(50), nullable=False)  # Property ListingKey
+    sender_name = Column(String(255), nullable=False)  # Lead's full name
+    sender_email_address = Column(String(255), nullable=False)  # Lead's email
+    sender_phone_number = Column(String(50), nullable=True)  # Lead's phone
+    preferred_method_contact = Column(String(20), nullable=True)  # email, phone, text
+    sender_phone_extension = Column(Integer, nullable=True)  # Phone extension
+    message = Column(Text, nullable=False)  # Lead's message
+    
+    # Lead tracking and management
+    lead_status = Column(String(50), default='new', nullable=False)  # new, contacted, qualified, converted, closed
+    lead_source = Column(String(100), nullable=True)  # website, mobile_app, referral, etc.
+    lead_priority = Column(String(20), default='medium', nullable=False)  # low, medium, high, urgent
+    
+    # CREA API response tracking
+    crea_lead_id = Column(String(100), nullable=True)  # CREA's lead ID if successfully submitted
+    crea_submission_status = Column(String(50), default='pending', nullable=False)  # pending, submitted, failed
+    crea_submission_error = Column(Text, nullable=True)  # Error message if submission failed
+    crea_submitted_at = Column(TIMESTAMP, nullable=True)  # When submitted to CREA
+    
+    # Lead qualification data
+    budget_min = Column(DECIMAL(12, 2), nullable=True)  # Minimum budget
+    budget_max = Column(DECIMAL(12, 2), nullable=True)  # Maximum budget
+    desired_location = Column(String(255), nullable=True)  # Preferred location/area
+    property_type_preference = Column(String(100), nullable=True)  # House, Condo, etc.
+    timeline = Column(String(100), nullable=True)  # Immediate, 3-6 months, etc.
+    financing_pre_approved = Column(Boolean, default=False)  # Pre-approval status
+    
+    # Follow-up tracking
+    follow_up_date = Column(TIMESTAMP, nullable=True)  # Next follow-up date
+    last_contact_date = Column(TIMESTAMP, nullable=True)  # Last time agent contacted lead
+    contact_attempts = Column(Integer, default=0)  # Number of contact attempts
+    notes = Column(Text, nullable=True)  # Agent's notes about the lead
+    
+    # Timestamps
+    created_at = Column(TIMESTAMP, default=func.now())
+    updated_at = Column(TIMESTAMP, default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    agent_profile = relationship("AgentProfile", back_populates="leads")
+    property_listing = relationship("Property", foreign_keys=[listing_key], 
+                                  primaryjoin="Lead.listing_key == Property.listing_key")
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_leads_agent_profile', 'agent_profile_id'),
+        Index('idx_leads_crea_agent_key', 'crea_agent_key'),
+        Index('idx_leads_listing_key', 'listing_key'),
+        Index('idx_leads_status', 'lead_status'),
+        Index('idx_leads_created_date', 'created_at'),
+        Index('idx_leads_follow_up_date', 'follow_up_date'),
+        Index('idx_leads_priority_status', 'lead_priority', 'lead_status'),
+        Index('idx_leads_sender_email', 'sender_email_address'),
+    ) 

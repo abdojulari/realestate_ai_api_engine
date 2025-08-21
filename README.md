@@ -364,7 +364,10 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/db_name
 
 # Security
 SECRET_KEY=your-secret-key
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# Frontend Configuration (required for password reset links)
+FRONTEND_BASE_URL=http://localhost:5173
 
 # CREA API (Optional)
 CREA_CLIENT_ID=your_client_id

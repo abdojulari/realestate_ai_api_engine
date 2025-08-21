@@ -1,0 +1,46 @@
+2025-08-10 08:56:59,452 - INFO - 🏠 Starting Housing Market Data Sync
+2025-08-10 08:56:59,452 - INFO - ==================================================
+2025-08-10 08:56:59,453 - INFO - 📍 Syncing data for regions: Canada, Alberta, British Columbia, Ontario, Quebec, Saskatchewan, Manitoba, Nova Scotia, New Brunswick, Newfoundland and Labrador, Prince Edward Island, Northwest Territories, Yukon, Nunavut
+2025-08-10 08:56:59,453 - INFO - 🧪 DRY RUN MODE - No data will be saved
+2025-08-10 08:56:59,519 - INFO - 📊 Current records in database: 24284
+2025-08-10 08:56:59,519 - INFO - 🔄 Starting StatCan data sync...
+2025-08-10 08:56:59,523 - DEBUG - Starting new HTTPS connection (1): www150.statcan.gc.ca:443
+2025-08-10 08:56:59,917 - DEBUG - https://www150.statcan.gc.ca:443 "GET /t1/wds/rest/getFullTableDownloadCSV/14100287/en HTTP/1.1" 200 None
+2025-08-10 08:57:00,804 - DEBUG - https://www150.statcan.gc.ca:443 "GET /n1/tbl/csv/14100287-eng.zip HTTP/1.1" 200 59081616
+2025-08-10 08:58:01,962 - INFO - 📈 Sync Results:
+2025-08-10 08:58:01,965 - INFO -    NHPI records: 23943
+2025-08-10 08:58:01,965 - INFO -    Sales records: 0
+2025-08-10 08:58:01,965 - INFO -    Price records: 0
+2025-08-10 08:58:01,965 - INFO -    Affordability records: 0
+2025-08-10 08:58:01,965 - INFO -    Errors: 0
+2025-08-10 08:58:01,965 - INFO - ✅ Total new records: 23943
+2025-08-10 08:58:01,965 - INFO - 🧪 Testing market statistics generation...
+2025-08-10 08:58:02,003 - INFO - 📊 Sample Market Statistics:
+2025-08-10 08:58:02,003 - INFO -    Properties Sold: 12847
+2025-08-10 08:58:02,003 - INFO -    Average Price: $485,900
+2025-08-10 08:58:02,003 - INFO -    Price Change: 5.8%
+2025-08-10 08:58:02,003 - INFO -    Active Listings: 3247
+2025-08-10 08:58:02,003 - INFO - ✅ Housing market data sync completed successfully!
+2025-08-10 08:58:14,612 - INFO - 🏠 Starting Housing Market Data Sync
+2025-08-10 08:58:14,612 - INFO - ==================================================
+2025-08-10 08:58:14,612 - INFO - 📍 Syncing data for regions: Canada, Alberta, British Columbia, Ontario, Quebec, Saskatchewan, Manitoba, Nova Scotia, New Brunswick, Newfoundland and Labrador, Prince Edward Island, Northwest Territories, Yukon, Nunavut
+2025-08-10 08:58:14,612 - INFO - 🧪 DRY RUN MODE - No data will be saved
+2025-08-10 08:58:14,680 - INFO - 📊 Current records in database: 24284
+2025-08-10 08:58:14,681 - INFO - 🔄 Starting StatCan data sync...
+2025-08-10 08:58:14,685 - DEBUG - Starting new HTTPS connection (1): www150.statcan.gc.ca:443
+2025-08-10 08:58:14,980 - DEBUG - https://www150.statcan.gc.ca:443 "GET /t1/wds/rest/getFullTableDownloadCSV/14100287/en HTTP/1.1" 200 None
+2025-08-10 08:58:15,197 - DEBUG - https://www150.statcan.gc.ca:443 "GET /n1/tbl/csv/14100287-eng.zip HTTP/1.1" 200 59081616
+2025-08-10 08:59:22,316 - INFO - 📈 Sync Results:
+2025-08-10 08:59:22,317 - INFO -    NHPI records: 23943
+2025-08-10 08:59:22,317 - INFO -    Sales records: 0
+2025-08-10 08:59:22,317 - INFO -    Price records: 0
+2025-08-10 08:59:22,317 - INFO -    Affordability records: 0
+2025-08-10 08:59:22,317 - INFO -    Errors: 0
+2025-08-10 08:59:22,317 - INFO - ✅ Total new records: 23943
+2025-08-10 08:59:22,317 - INFO - 🧪 Testing market statistics generation...
+2025-08-10 08:59:22,357 - INFO - 📊 Sample Market Statistics:
+2025-08-10 08:59:22,357 - INFO -    Properties Sold: 12847
+2025-08-10 08:59:22,357 - INFO -    Average Price: $485,900
+2025-08-10 08:59:22,357 - INFO -    Price Change: 5.8%
+2025-08-10 08:59:22,357 - INFO -    Active Listings: 3247
+2025-08-10 08:59:22,357 - INFO - ✅ Housing market data sync completed successfully!

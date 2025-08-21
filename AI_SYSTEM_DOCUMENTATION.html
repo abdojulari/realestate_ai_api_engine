@@ -1,0 +1,1080 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Real Estate AI System Documentation</title>
+        
+    <style>
+    body {
+        font-family: 'Arial', sans-serif;
+        line-height: 1.6;
+        margin: 40px;
+        color: #333;
+        font-size: 11px;
+    }
+    h1 {
+        color: #2c3e50;
+        border-bottom: 3px solid #3498db;
+        padding-bottom: 10px;
+        font-size: 24px;
+    }
+    h2 {
+        color: #34495e;
+        margin-top: 30px;
+        font-size: 20px;
+        border-bottom: 2px solid #ecf0f1;
+        padding-bottom: 5px;
+    }
+    h3 {
+        color: #7f8c8d;
+        margin-top: 25px;
+        font-size: 16px;
+    }
+    h4 {
+        color: #95a5a6;
+        font-size: 14px;
+    }
+    code {
+        background-color: #f8f9fa;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 10px;
+    }
+    pre {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 15px;
+        overflow-x: auto;
+        font-size: 9px;
+        line-height: 1.4;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 20px 0;
+        font-size: 10px;
+    }
+    table, th, td {
+        border: 1px solid #ddd;
+    }
+    th, td {
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    .toc {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    blockquote {
+        border-left: 4px solid #3498db;
+        margin: 0;
+        padding-left: 20px;
+        color: #7f8c8d;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+    </style>
+    
+    </head>
+    <body>
+        <h1 id="real-estate-ai-system-architecture-algorithm-documentation">Real Estate AI System Architecture &amp; Algorithm Documentation</h1>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>This document provides a comprehensive technical explanation of the Real Estate AI system, including Natural Language Processing (NLP), Machine Learning algorithms, database search optimization, and recommendation engine implementation.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#system-overview">System Overview</a></li>
+<li><a href="#nlp-pipeline">Natural Language Processing (NLP) Pipeline</a></li>
+<li><a href="#database-search">Database Search &amp; Filtering</a></li>
+<li><a href="#ml-engine">Machine Learning Recommendation Engine</a></li>
+<li><a href="#scoring-ranking">Scoring &amp; Ranking Algorithms</a></li>
+<li><a href="#ai-endpoints">AI Endpoints &amp; Functions</a></li>
+<li><a href="#model-training">Model Training &amp; Optimization</a></li>
+<li><a href="#metrics-evaluation">Performance Metrics &amp; Evaluation</a></li>
+<li><a href="#hyperparameter-tuning">Hyperparameter Tuning</a></li>
+<li><a href="#future-enhancements">Future Enhancements</a></li>
+</ol>
+<hr />
+<h2 id="system-overview">System Overview</h2>
+<p>The Real Estate AI system is a <strong>hybrid multi-modal recommendation engine</strong> that combines:</p>
+<ol>
+<li><strong>Natural Language Processing (NLP)</strong> for prompt understanding</li>
+<li><strong>Machine Learning</strong> for property recommendations  </li>
+<li><strong>Database Search</strong> for precise filtering</li>
+<li><strong>Semantic Similarity</strong> for intelligent matching</li>
+</ol>
+<h3 id="technology-stack">Technology Stack</h3>
+<ul>
+<li><strong>NLP Framework</strong>: spaCy (en_core_web_sm model)</li>
+<li><strong>ML Libraries</strong>: Scikit-learn, Sentence Transformers</li>
+<li><strong>Database</strong>: PostgreSQL with SQLAlchemy ORM</li>
+<li><strong>API Framework</strong>: FastAPI</li>
+<li><strong>Vector Operations</strong>: NumPy, Pandas</li>
+</ul>
+<hr />
+<h2 id="nlp-pipeline">NLP Pipeline</h2>
+<h3 id="phase-1-natural-language-processing">Phase 1: Natural Language Processing</h3>
+<h4 id="files-components">Files &amp; Components:</h4>
+<ul>
+<li><code>enhanced_parser.py</code> - Advanced NLP processor</li>
+<li><code>parser.py</code> - Basic NLP fallback  </li>
+<li><code>embedder.py</code> - Text embedding generation</li>
+</ul>
+<h4 id="nlp-architecture">NLP Architecture:</h4>
+<p><strong>1.1 Text Preprocessing:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Uses spaCy English model: en_core_web_sm</span>
+<span class="n">nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;en_core_web_sm&quot;</span><span class="p">)</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">user_prompt</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>1.2 Named Entity Recognition (NER):</strong>
+- <strong>Locations</strong>: Cities, neighborhoods, postal codes
+- <strong>Numbers</strong>: Bedrooms, bathrooms, prices, square footage
+- <strong>Property Types</strong>: House, condo, townhouse, duplex</p>
+<p><strong>1.3 Feature Extraction Schema:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PropertyRequirements</span><span class="p">:</span>
+    <span class="c1"># Basic Property Features</span>
+    <span class="n">bedrooms_total</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">bedrooms_above_grade</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">bedrooms_main_floor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">bathrooms_total</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">bathrooms_full</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Price Range</span>
+    <span class="n">min_price</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">max_price</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Property Type</span>
+    <span class="n">property_types</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Size and Space</span>
+    <span class="n">square_feet_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">square_feet_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Garage and Parking</span>
+    <span class="n">garage_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">garage_spaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Special Features</span>
+    <span class="n">bonus_room</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">spice_kitchen</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">basement_developed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">fireplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">hardwood_floors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Location Preferences</span>
+    <span class="n">cities</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">neighborhoods</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">postal_codes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="c1"># Lifestyle Keywords</span>
+    <span class="n">lifestyle_keywords</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>1.4 Pattern Matching Algorithms:</strong></p>
+<p><strong>Price Extraction:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">extract_price_range</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="c1"># Regex patterns for price extraction</span>
+    <span class="n">patterns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">r</span><span class="s1">&#39;\$(\d{1,3}(?:,\d</span><span class="si">{3}</span><span class="s1">)*(?:\.\d</span><span class="si">{2}</span><span class="s1">)?)\s*k?&#39;</span><span class="p">,</span>  <span class="c1"># $500k, $500,000</span>
+        <span class="sa">r</span><span class="s1">&#39;(\d+)k&#39;</span><span class="p">,</span>  <span class="c1"># 500k</span>
+        <span class="sa">r</span><span class="s1">&#39;under\s+\$?(\d+)&#39;</span><span class="p">,</span>  <span class="c1"># under $500k</span>
+        <span class="sa">r</span><span class="s1">&#39;max\s+\$?(\d+)&#39;</span><span class="p">,</span>  <span class="c1"># max $500k</span>
+    <span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">:</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">price</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">price</span> <span class="o">*</span> <span class="mi">1000</span> <span class="k">if</span> <span class="s1">&#39;k&#39;</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">else</span> <span class="n">price</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+
+<p><strong>Keyword Detection:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">detect_amenities</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">amenity_keywords</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;spice_kitchen&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;spice kitchen&#39;</span><span class="p">,</span> <span class="s1">&#39;wok kitchen&#39;</span><span class="p">,</span> <span class="s1">&#39;prep kitchen&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;bonus_room&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;bonus room&#39;</span><span class="p">,</span> <span class="s1">&#39;flex room&#39;</span><span class="p">,</span> <span class="s1">&#39;den&#39;</span><span class="p">,</span> <span class="s1">&#39;office&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;basement_developed&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;finished basement&#39;</span><span class="p">,</span> <span class="s1">&#39;developed basement&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;fireplace&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;fireplace&#39;</span><span class="p">,</span> <span class="s1">&#39;gas fireplace&#39;</span><span class="p">,</span> <span class="s1">&#39;wood burning&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;hardwood_floors&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;hardwood&#39;</span><span class="p">,</span> <span class="s1">&#39;hardwood floors&#39;</span><span class="p">,</span> <span class="s1">&#39;wood floors&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="n">detected_amenities</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">amenity</span><span class="p">,</span> <span class="n">keywords</span> <span class="ow">in</span> <span class="n">amenity_keywords</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">detected_amenities</span><span class="p">[</span><span class="n">amenity</span><span class="p">]</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">detected_amenities</span>
+</code></pre></div>
+
+<hr />
+<h2 id="database-search-filtering">Database Search &amp; Filtering</h2>
+<h3 id="phase-2-database-search-optimization">Phase 2: Database Search Optimization</h3>
+<h4 id="files-components_1">Files &amp; Components:</h4>
+<ul>
+<li><code>routers/ai.py</code> - Main search orchestration</li>
+<li><code>db_models.py</code> - Database schema definitions</li>
+</ul>
+<h4 id="search-algorithm-architecture">Search Algorithm Architecture:</h4>
+<p><strong>2.1 Multi-Field Database Query:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_comprehensive_query</span><span class="p">(</span><span class="n">requirements</span><span class="p">,</span> <span class="n">db_session</span><span class="p">):</span>
+    <span class="c1"># Base query with relationship loading</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="n">db_session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Property</span><span class="p">)</span><span class="o">.</span><span class="n">options</span><span class="p">(</span>
+        <span class="n">joinedload</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">property_type</span><span class="p">),</span>
+        <span class="n">joinedload</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">listing_agent</span><span class="p">),</span>
+        <span class="n">joinedload</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">listing_office</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Apply exact match filters</span>
+    <span class="k">if</span> <span class="n">requirements</span><span class="o">.</span><span class="n">bedrooms_total</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">bedrooms</span> <span class="o">==</span> <span class="n">requirements</span><span class="o">.</span><span class="n">bedrooms_total</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">requirements</span><span class="o">.</span><span class="n">bathrooms_total</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">bathrooms</span> <span class="o">==</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">requirements</span><span class="o">.</span><span class="n">bathrooms_total</span><span class="p">)))</span>
+
+    <span class="c1"># Apply location filters</span>
+    <span class="k">if</span> <span class="n">requirements</span><span class="o">.</span><span class="n">cities</span><span class="p">:</span>
+        <span class="n">location_filters</span> <span class="o">=</span> <span class="p">[</span><span class="n">Property</span><span class="o">.</span><span class="n">city</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;%</span><span class="si">{</span><span class="n">city</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">city</span> <span class="ow">in</span> <span class="n">requirements</span><span class="o">.</span><span class="n">cities</span><span class="p">]</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">or_</span><span class="p">(</span><span class="o">*</span><span class="n">location_filters</span><span class="p">))</span>
+
+    <span class="c1"># Apply price range filters</span>
+    <span class="k">if</span> <span class="n">requirements</span><span class="o">.</span><span class="n">min_price</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">price</span> <span class="o">&gt;=</span> <span class="n">requirements</span><span class="o">.</span><span class="n">min_price</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">requirements</span><span class="o">.</span><span class="n">max_price</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">price</span> <span class="o">&lt;=</span> <span class="n">requirements</span><span class="o">.</span><span class="n">max_price</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">query</span>
+</code></pre></div>
+
+<p><strong>2.2 Comprehensive Keyword Expansion:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">expand_search_keywords</span><span class="p">(</span><span class="n">prompt</span><span class="p">):</span>
+    <span class="n">keyword_mapping</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;luxury&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;luxury&#39;</span><span class="p">,</span> <span class="s1">&#39;high-end&#39;</span><span class="p">,</span> <span class="s1">&#39;premium&#39;</span><span class="p">,</span> <span class="s1">&#39;executive&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">,</span> <span class="s1">&#39;family-friendly&#39;</span><span class="p">,</span> <span class="s1">&#39;safe&#39;</span><span class="p">,</span> <span class="s1">&#39;quiet&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;modern&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;modern&#39;</span><span class="p">,</span> <span class="s1">&#39;contemporary&#39;</span><span class="p">,</span> <span class="s1">&#39;updated&#39;</span><span class="p">,</span> <span class="s1">&#39;renovated&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;view&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="s1">&#39;mountain view&#39;</span><span class="p">,</span> <span class="s1">&#39;lake view&#39;</span><span class="p">,</span> <span class="s1">&#39;river view&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;schools&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;school&#39;</span><span class="p">,</span> <span class="s1">&#39;schools&#39;</span><span class="p">,</span> <span class="s1">&#39;education&#39;</span><span class="p">,</span> <span class="s1">&#39;elementary&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;transit&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;transit&#39;</span><span class="p">,</span> <span class="s1">&#39;transport&#39;</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;lrt&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;shopping&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;shopping&#39;</span><span class="p">,</span> <span class="s1">&#39;mall&#39;</span><span class="p">,</span> <span class="s1">&#39;stores&#39;</span><span class="p">,</span> <span class="s1">&#39;retail&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;parks&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;park&#39;</span><span class="p">,</span> <span class="s1">&#39;parks&#39;</span><span class="p">,</span> <span class="s1">&#39;playground&#39;</span><span class="p">,</span> <span class="s1">&#39;green space&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="n">expanded_keywords</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prompt_lower</span> <span class="o">=</span> <span class="n">prompt</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">base_keyword</span><span class="p">,</span> <span class="n">synonyms</span> <span class="ow">in</span> <span class="n">keyword_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span> <span class="ow">in</span> <span class="n">prompt_lower</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">synonyms</span><span class="p">):</span>
+            <span class="n">expanded_keywords</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">synonyms</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">expanded_keywords</span>
+</code></pre></div>
+
+<p><strong>2.3 Description Mining Algorithm:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">search_property_descriptions</span><span class="p">(</span><span class="n">keywords</span><span class="p">,</span> <span class="n">db_session</span><span class="p">):</span>
+    <span class="c1"># Search across multiple text fields</span>
+    <span class="n">search_conditions</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">:</span>
+        <span class="n">search_conditions</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+            <span class="n">Property</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;%</span><span class="si">{</span><span class="n">keyword</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">),</span>
+            <span class="n">Property</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;%</span><span class="si">{</span><span class="n">keyword</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">),</span>
+            <span class="n">Property</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;%</span><span class="si">{</span><span class="n">keyword</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">),</span>
+            <span class="n">Property</span><span class="o">.</span><span class="n">common_interest</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;%</span><span class="si">{</span><span class="n">keyword</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">),</span>
+            <span class="n">Property</span><span class="o">.</span><span class="n">zoning</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;%</span><span class="si">{</span><span class="n">keyword</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">),</span>
+            <span class="c1"># JSONB field searches</span>
+            <span class="n">func</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">other_amenities</span><span class="p">,</span> <span class="n">Text</span><span class="p">)</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;%</span><span class="si">{</span><span class="n">keyword</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">),</span>
+            <span class="n">func</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">Property</span><span class="o">.</span><span class="n">accessibility_features</span><span class="p">,</span> <span class="n">Text</span><span class="p">)</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;%</span><span class="si">{</span><span class="n">keyword</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+        <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">or_</span><span class="p">(</span><span class="o">*</span><span class="n">search_conditions</span><span class="p">)</span> <span class="k">if</span> <span class="n">search_conditions</span> <span class="k">else</span> <span class="kc">None</span>
+</code></pre></div>
+
+<hr />
+<h2 id="machine-learning-recommendation-engine">Machine Learning Recommendation Engine</h2>
+<h3 id="phase-3-ml-architecture">Phase 3: ML Architecture</h3>
+<h4 id="files-components_2">Files &amp; Components:</h4>
+<ul>
+<li><code>recommendation_engine.py</code> - Core ML algorithms</li>
+<li><code>matcher.py</code> - Similarity computation</li>
+</ul>
+<h4 id="ml-component-architecture">ML Component Architecture:</h4>
+<p><strong>3.1 Property Feature Engineering:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PropertyFeatures</span><span class="p">:</span>
+    <span class="n">property_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">price</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">bedrooms</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">bathrooms</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">square_feet</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">property_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">location</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age_years</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">garage_spaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">amenities</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">neighborhood_score</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">price_per_sqft</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to numerical vector for ML algorithms&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bedrooms</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bathrooms</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">square_feet</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">age_years</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">garage_spaces</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">neighborhood_score</span> <span class="ow">or</span> <span class="mf">0.5</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">price_per_sqft</span> <span class="ow">or</span> <span class="mi">0</span>
+        <span class="p">])</span>
+</code></pre></div>
+
+<p><strong>3.2 Content-Based Filtering:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ContentBasedRecommender</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vectorizer</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">(</span>
+            <span class="n">max_features</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+            <span class="n">stop_words</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">,</span>
+            <span class="n">ngram_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="n">min_df</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">max_df</span><span class="o">=</span><span class="mf">0.8</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">properties</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PropertyFeatures</span><span class="p">]):</span>
+        <span class="c1"># Text vectorization</span>
+        <span class="n">descriptions</span> <span class="o">=</span> <span class="p">[</span><span class="n">prop</span><span class="o">.</span><span class="n">description</span> <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_vectors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectorizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">descriptions</span><span class="p">)</span>
+
+        <span class="c1"># Numerical feature scaling</span>
+        <span class="n">numerical_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">prop</span><span class="o">.</span><span class="n">to_vector</span><span class="p">()</span> <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numerical_vectors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">numerical_features</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_similarities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">query_features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
+        <span class="c1"># Text similarity</span>
+        <span class="n">query_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">([</span><span class="n">query_text</span><span class="p">])</span>
+        <span class="n">text_similarities</span> <span class="o">=</span> <span class="n">cosine_similarity</span><span class="p">(</span><span class="n">query_vector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_vectors</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Numerical similarity</span>
+        <span class="n">query_scaled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">([</span><span class="n">query_features</span><span class="p">])</span>
+        <span class="n">numerical_similarities</span> <span class="o">=</span> <span class="n">cosine_similarity</span><span class="p">(</span><span class="n">query_scaled</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numerical_vectors</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Combined similarity</span>
+        <span class="n">combined_similarities</span> <span class="o">=</span> <span class="mf">0.7</span> <span class="o">*</span> <span class="n">text_similarities</span> <span class="o">+</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">numerical_similarities</span>
+        <span class="k">return</span> <span class="n">combined_similarities</span>
+</code></pre></div>
+
+<p><strong>3.3 Semantic Similarity with Sentence Transformers:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SemanticRecommender</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">SentenceTransformer</span><span class="p">(</span><span class="s1">&#39;all-MiniLM-L6-v2&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">property_embeddings</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">property_descriptions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate embeddings for all property descriptions&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">property_embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+            <span class="n">property_descriptions</span><span class="p">,</span>
+            <span class="n">convert_to_tensor</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">show_progress_bar</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_semantic_similarities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate semantic similarity between query and properties&quot;&quot;&quot;</span>
+        <span class="n">query_embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encode</span><span class="p">([</span><span class="n">query</span><span class="p">],</span> <span class="n">convert_to_tensor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Compute cosine similarity</span>
+        <span class="n">similarities</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">pytorch_cos_sim</span><span class="p">(</span><span class="n">query_embedding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">property_embeddings</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">similarities</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</code></pre></div>
+
+<p><strong>3.4 Clustering for Market Segmentation:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PropertyClusterAnalyzer</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_clusters</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kmeans</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="n">n_clusters</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">properties</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PropertyFeatures</span><span class="p">]):</span>
+        <span class="c1"># Prepare features for clustering</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="n">feature_vector</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">price</span><span class="p">,</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">bedrooms</span><span class="p">,</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">bathrooms</span><span class="p">,</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">square_feet</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">age_years</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">amenities</span><span class="p">),</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">neighborhood_score</span> <span class="ow">or</span> <span class="mf">0.5</span>
+            <span class="p">]</span>
+            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_vector</span><span class="p">)</span>
+
+        <span class="c1"># Scale and cluster</span>
+        <span class="n">features_scaled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmeans</span><span class="o">.</span><span class="n">fit_predict</span><span class="p">(</span><span class="n">features_scaled</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_cluster_characteristics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Analyze cluster characteristics&quot;&quot;&quot;</span>
+        <span class="n">cluster_stats</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">cluster_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kmeans</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">):</span>
+            <span class="n">cluster_properties</span> <span class="o">=</span> <span class="p">[</span><span class="n">prop</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span> 
+                                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">cluster_id</span><span class="p">]</span>
+
+            <span class="n">cluster_stats</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;avg_price&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">price</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cluster_properties</span><span class="p">]),</span>
+                <span class="s1">&#39;avg_bedrooms&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">bedrooms</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cluster_properties</span><span class="p">]),</span>
+                <span class="s1">&#39;common_amenities&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_common_amenities</span><span class="p">(</span><span class="n">cluster_properties</span><span class="p">)</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">cluster_stats</span>
+</code></pre></div>
+
+<hr />
+<h2 id="scoring-ranking-algorithms">Scoring &amp; Ranking Algorithms</h2>
+<h3 id="phase-4-multi-score-recommendation-system">Phase 4: Multi-Score Recommendation System</h3>
+<h4 id="recommendation-scoring-schema">Recommendation Scoring Schema:</h4>
+<div class="codehilite"><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PropertyRecommendation</span><span class="p">:</span>
+    <span class="n">property_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">overall_score</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">content_score</span><span class="p">:</span> <span class="nb">float</span>      <span class="c1"># TF-IDF similarity (40% weight)</span>
+    <span class="n">semantic_score</span><span class="p">:</span> <span class="nb">float</span>     <span class="c1"># Sentence transformer similarity (25% weight)</span>
+    <span class="n">price_score</span><span class="p">:</span> <span class="nb">float</span>        <span class="c1"># Price matching score (20% weight)</span>
+    <span class="n">location_score</span><span class="p">:</span> <span class="nb">float</span>     <span class="c1"># Geographic relevance (10% weight)</span>
+    <span class="n">amenity_score</span><span class="p">:</span> <span class="nb">float</span>      <span class="c1"># Feature matching (5% weight)</span>
+    <span class="n">explanation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>    <span class="c1"># Human-readable reasons</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_overall_score</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">scores</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate weighted overall score&quot;&quot;&quot;</span>
+        <span class="n">overall</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">scores</span><span class="p">[</span><span class="n">component</span><span class="p">]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">component</span><span class="p">]</span> <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">overall</span><span class="p">))</span>  <span class="c1"># Normalize to [0, 1]</span>
+</code></pre></div>
+
+<h4 id="individual-scoring-algorithms">Individual Scoring Algorithms:</h4>
+<p><strong>4.1 Content Matching Score:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">calculate_content_score</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">property_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vectorizer</span><span class="p">,</span> <span class="n">property_vectors</span><span class="p">,</span> <span class="n">prop_index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;TF-IDF based content similarity&quot;&quot;&quot;</span>
+    <span class="n">query_vector</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">transform</span><span class="p">([</span><span class="n">query</span><span class="p">])</span>
+    <span class="n">similarity</span> <span class="o">=</span> <span class="n">cosine_similarity</span><span class="p">(</span><span class="n">query_vector</span><span class="p">,</span> <span class="n">property_vectors</span><span class="p">[</span><span class="n">prop_index</span><span class="p">:</span><span class="n">prop_index</span><span class="o">+</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">similarity</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>4.2 Price Optimization Score:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">calculate_price_score</span><span class="p">(</span><span class="n">user_budget</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">property_price</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Price matching with preference curve&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user_budget</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.5</span>  <span class="c1"># Neutral score if no budget specified</span>
+
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">property_price</span> <span class="o">/</span> <span class="n">user_budget</span>
+
+    <span class="k">if</span> <span class="n">ratio</span> <span class="o">&lt;=</span> <span class="mf">0.8</span><span class="p">:</span>  <span class="c1"># Significantly under budget</span>
+        <span class="k">return</span> <span class="mf">0.9</span>
+    <span class="k">elif</span> <span class="n">ratio</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>  <span class="c1"># Within budget</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+    <span class="k">elif</span> <span class="n">ratio</span> <span class="o">&lt;=</span> <span class="mf">1.2</span><span class="p">:</span>  <span class="c1"># Slightly over budget</span>
+        <span class="k">return</span> <span class="mf">0.7</span>
+    <span class="k">elif</span> <span class="n">ratio</span> <span class="o">&lt;=</span> <span class="mf">1.5</span><span class="p">:</span>  <span class="c1"># Moderately over budget</span>
+        <span class="k">return</span> <span class="mf">0.4</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># Way over budget</span>
+        <span class="k">return</span> <span class="mf">0.1</span>
+</code></pre></div>
+
+<p><strong>4.3 Location Relevance Score:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">calculate_location_score</span><span class="p">(</span><span class="n">user_locations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">property_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Geographic and neighborhood matching&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user_locations</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.5</span>
+
+    <span class="n">property_location_lower</span> <span class="o">=</span> <span class="n">property_location</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">user_location</span> <span class="ow">in</span> <span class="n">user_locations</span><span class="p">:</span>
+        <span class="n">user_location_lower</span> <span class="o">=</span> <span class="n">user_location</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="c1"># Exact match</span>
+        <span class="k">if</span> <span class="n">user_location_lower</span> <span class="o">==</span> <span class="n">property_location_lower</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1.0</span>
+
+        <span class="c1"># Partial match (e.g., &quot;Edmonton&quot; in &quot;Edmonton, AB&quot;)</span>
+        <span class="k">if</span> <span class="n">user_location_lower</span> <span class="ow">in</span> <span class="n">property_location_lower</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.8</span>
+
+        <span class="c1"># Fuzzy matching for neighborhoods</span>
+        <span class="n">similarity</span> <span class="o">=</span> <span class="n">difflib</span><span class="o">.</span><span class="n">SequenceMatcher</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">user_location_lower</span><span class="p">,</span> <span class="n">property_location_lower</span><span class="p">)</span><span class="o">.</span><span class="n">ratio</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">similarity</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">similarity</span>
+
+    <span class="k">return</span> <span class="mf">0.2</span>  <span class="c1"># Default low score for no match</span>
+</code></pre></div>
+
+<p><strong>4.4 Amenity Matching Score:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">calculate_amenity_score</span><span class="p">(</span><span class="n">required_amenities</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">property_amenities</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">property_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Feature and amenity matching&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">required_amenities</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.5</span>
+
+    <span class="n">matches</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">total_required</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">required_amenities</span><span class="p">)</span>
+
+    <span class="n">description_lower</span> <span class="o">=</span> <span class="n">property_description</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">property_amenities_lower</span> <span class="o">=</span> <span class="p">[</span><span class="n">amenity</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">amenity</span> <span class="ow">in</span> <span class="n">property_amenities</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">required_amenity</span> <span class="ow">in</span> <span class="n">required_amenities</span><span class="p">:</span>
+        <span class="n">required_lower</span> <span class="o">=</span> <span class="n">required_amenity</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="c1"># Check in amenities list</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">required_lower</span> <span class="ow">in</span> <span class="n">amenity</span> <span class="k">for</span> <span class="n">amenity</span> <span class="ow">in</span> <span class="n">property_amenities_lower</span><span class="p">):</span>
+            <span class="n">matches</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Check in description</span>
+        <span class="k">elif</span> <span class="n">required_lower</span> <span class="ow">in</span> <span class="n">description_lower</span><span class="p">:</span>
+            <span class="n">matches</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">matches</span> <span class="o">/</span> <span class="n">total_required</span>
+</code></pre></div>
+
+<hr />
+<h2 id="ai-endpoints-functions">AI Endpoints &amp; Functions</h2>
+<h3 id="api-architecture-overview">API Architecture Overview</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>HTTP Method</th>
+<th>Function</th>
+<th>Algorithm Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/ai/parse</code></td>
+<td>POST</td>
+<td>Main search &amp; recommendation</td>
+<td>NLP → DB Search → ML Ranking</td>
+</tr>
+<tr>
+<td><code>/ai/recommend-properties</code></td>
+<td>POST</td>
+<td>User preference matching</td>
+<td>Content + Collaborative Filtering</td>
+</tr>
+<tr>
+<td><code>/ai/similar-properties/{id}</code></td>
+<td>GET</td>
+<td>Find similar properties</td>
+<td>Cosine Similarity + Feature Matching</td>
+</tr>
+<tr>
+<td><code>/ai/subscribe</code></td>
+<td>POST</td>
+<td>User subscription with ML</td>
+<td>Advanced NLP + User Profiling</td>
+</tr>
+<tr>
+<td><code>/ai/analyze-market</code></td>
+<td>POST</td>
+<td>Market trend analysis</td>
+<td>Statistical Analysis + ML</td>
+</tr>
+<tr>
+<td><code>/ai/generate-description</code></td>
+<td>POST</td>
+<td>AI description generation</td>
+<td>NLP Generation (Template-based)</td>
+</tr>
+<tr>
+<td><code>/ai/model-status</code></td>
+<td>GET</td>
+<td>Model health monitoring</td>
+<td>System Analytics</td>
+</tr>
+<tr>
+<td><code>/ai/retrain-model</code></td>
+<td>POST</td>
+<td>Model retraining</td>
+<td>Batch ML Training</td>
+</tr>
+</tbody>
+</table>
+<h3 id="detailed-endpoint-analysis">Detailed Endpoint Analysis:</h3>
+<h4 id="1-aiparse-core-search-engine">1. <code>/ai/parse</code> - Core Search Engine</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">parse_prompt</span><span class="p">(</span><span class="n">prompt</span><span class="p">:</span> <span class="n">Prompt</span><span class="p">,</span> <span class="n">current_user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">User</span><span class="p">],</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Main AI search endpoint combining NLP, database search, and ML ranking</span>
+
+<span class="sd">    Process Flow:</span>
+<span class="sd">    1. NLP parsing with enhanced_parser.py</span>
+<span class="sd">    2. Database filtering with exact matches</span>
+<span class="sd">    3. Keyword expansion and description mining</span>
+<span class="sd">    4. Agent/office relationship loading</span>
+<span class="sd">    5. CREA format response generation</span>
+
+<span class="sd">    Returns: List of properties in complete CREA format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+
+<p><strong>Algorithm Steps:</strong>
+1. <strong>Enhanced NLP Processing</strong>: Extract 50+ property attributes
+2. <strong>Multi-Field Database Query</strong>: Search across 10+ fields simultaneously
+3. <strong>Keyword Expansion</strong>: Convert single terms to synonym groups
+4. <strong>Exact Match Filtering</strong>: Precise bedroom/bathroom/location matching
+5. <strong>Agent/Office Integration</strong>: Load related CREA professional data
+6. <strong>Response Formatting</strong>: Return complete property information</p>
+<h4 id="2-airecommend-properties-ml-recommendation-engine">2. <code>/ai/recommend-properties</code> - ML Recommendation Engine</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">recommend_properties</span><span class="p">(</span><span class="n">user_preferences</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">current_user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">User</span><span class="p">],</span> <span class="n">db</span><span class="p">:</span> <span class="n">Session</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Machine Learning powered property recommendations</span>
+
+<span class="sd">    Algorithm Components:</span>
+<span class="sd">    1. User preference profiling</span>
+<span class="sd">    2. Content-based filtering</span>
+<span class="sd">    3. Semantic similarity matching</span>
+<span class="sd">    4. Multi-score ranking system</span>
+
+<span class="sd">    Returns: Ranked list of recommended properties</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+
+<h4 id="3-aisimilar-propertiesid-similarity-engine">3. <code>/ai/similar-properties/{id}</code> - Similarity Engine</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_similar_properties</span><span class="p">(</span><span class="n">property_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find properties similar to a given property</span>
+
+<span class="sd">    Similarity Metrics:</span>
+<span class="sd">    1. Feature vector cosine similarity</span>
+<span class="sd">    2. Description semantic similarity</span>
+<span class="sd">    3. Price range compatibility</span>
+<span class="sd">    4. Location proximity</span>
+
+<span class="sd">    Returns: Top-K most similar properties</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="model-training-optimization">Model Training &amp; Optimization</h2>
+<h3 id="current-training-architecture">Current Training Architecture</h3>
+<h4 id="data-sources-preprocessing">Data Sources &amp; Preprocessing:</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">TrainingDataManager</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vectorizer</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_encoder</span> <span class="o">=</span> <span class="n">LabelEncoder</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_training_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare data for model training&quot;&quot;&quot;</span>
+        <span class="c1"># Collect property data</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_property_data</span><span class="p">()</span>
+
+        <span class="c1"># Collect user interaction data</span>
+        <span class="n">interactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_user_interactions</span><span class="p">()</span>
+
+        <span class="c1"># Feature engineering</span>
+        <span class="n">text_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_text_features</span><span class="p">(</span><span class="n">properties</span><span class="p">)</span>
+        <span class="n">numerical_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_numerical_features</span><span class="p">(</span><span class="n">properties</span><span class="p">)</span>
+        <span class="n">categorical_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode_categorical_features</span><span class="p">(</span><span class="n">properties</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;text_features&#39;</span><span class="p">:</span> <span class="n">text_features</span><span class="p">,</span>
+            <span class="s1">&#39;numerical_features&#39;</span><span class="p">:</span> <span class="n">numerical_features</span><span class="p">,</span>
+            <span class="s1">&#39;categorical_features&#39;</span><span class="p">:</span> <span class="n">categorical_features</span><span class="p">,</span>
+            <span class="s1">&#39;interactions&#39;</span><span class="p">:</span> <span class="n">interactions</span>
+        <span class="p">}</span>
+</code></pre></div>
+
+<h4 id="training-pipeline">Training Pipeline:</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">RecommendationModelTrainer</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;content_based&#39;</span><span class="p">:</span> <span class="n">ContentBasedRecommender</span><span class="p">(),</span>
+            <span class="s1">&#39;semantic&#39;</span><span class="p">:</span> <span class="n">SemanticRecommender</span><span class="p">(),</span>
+            <span class="s1">&#39;clustering&#39;</span><span class="p">:</span> <span class="n">PropertyClusterAnalyzer</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_models</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training_data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Complete model training pipeline&quot;&quot;&quot;</span>
+
+        <span class="c1"># 1. Content-based model training</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="s1">&#39;content_based&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">training_data</span><span class="p">[</span><span class="s1">&#39;text_features&#39;</span><span class="p">],</span>
+            <span class="n">training_data</span><span class="p">[</span><span class="s1">&#39;numerical_features&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 2. Semantic model training</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="s1">&#39;semantic&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training_data</span><span class="p">[</span><span class="s1">&#39;text_features&#39;</span><span class="p">])</span>
+
+        <span class="c1"># 3. Clustering model training</span>
+        <span class="n">clusters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="s1">&#39;clustering&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training_data</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">])</span>
+
+        <span class="c1"># 4. Save trained models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_models</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;content_model_accuracy&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_content_model</span><span class="p">(),</span>
+            <span class="s1">&#39;semantic_model_quality&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_semantic_model</span><span class="p">(),</span>
+            <span class="s1">&#39;cluster_coherence&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_clusters</span><span class="p">()</span>
+        <span class="p">}</span>
+</code></pre></div>
+
+<hr />
+<h2 id="performance-metrics-evaluation">Performance Metrics &amp; Evaluation</h2>
+<h3 id="model-evaluation-framework">Model Evaluation Framework</h3>
+<h4 id="1-recommendation-accuracy-metrics">1. Recommendation Accuracy Metrics:</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">RecommendationEvaluator</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_precision_at_k</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recommendations</span><span class="p">,</span> <span class="n">relevant_items</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Precision@K for recommendation quality&quot;&quot;&quot;</span>
+        <span class="n">recommended_items</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">property_id</span> <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">recommendations</span><span class="p">[:</span><span class="n">k</span><span class="p">])</span>
+        <span class="n">relevant_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">relevant_items</span><span class="p">)</span>
+
+        <span class="n">precision</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">recommended_items</span> <span class="o">&amp;</span> <span class="n">relevant_set</span><span class="p">)</span> <span class="o">/</span> <span class="n">k</span>
+        <span class="k">return</span> <span class="n">precision</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_recall_at_k</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recommendations</span><span class="p">,</span> <span class="n">relevant_items</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recall@K for recommendation coverage&quot;&quot;&quot;</span>
+        <span class="n">recommended_items</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">property_id</span> <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">recommendations</span><span class="p">[:</span><span class="n">k</span><span class="p">])</span>
+        <span class="n">relevant_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">relevant_items</span><span class="p">)</span>
+
+        <span class="n">recall</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">recommended_items</span> <span class="o">&amp;</span> <span class="n">relevant_set</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">relevant_set</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">recall</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_ndcg_at_k</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recommendations</span><span class="p">,</span> <span class="n">relevance_scores</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalized Discounted Cumulative Gain&quot;&quot;&quot;</span>
+        <span class="n">dcg</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">recommendations</span><span class="p">[:</span><span class="n">k</span><span class="p">]):</span>
+            <span class="n">relevance</span> <span class="o">=</span> <span class="n">relevance_scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">property_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">dcg</span> <span class="o">+=</span> <span class="n">relevance</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Calculate ideal DCG</span>
+        <span class="n">ideal_relevance</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">relevance_scores</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">idcg</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">rel</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ideal_relevance</span><span class="p">[:</span><span class="n">k</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">dcg</span> <span class="o">/</span> <span class="n">idcg</span> <span class="k">if</span> <span class="n">idcg</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+</code></pre></div>
+
+<h4 id="2-user-engagement-metrics">2. User Engagement Metrics:</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">calculate_engagement_metrics</span><span class="p">(</span><span class="n">user_interactions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate user engagement and satisfaction metrics&quot;&quot;&quot;</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;click_through_rate&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;time_on_property&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;inquiry_conversion_rate&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;bookmark_rate&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;session_duration&#39;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">}</span>
+
+    <span class="n">total_sessions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">user_interactions</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">interaction</span> <span class="ow">in</span> <span class="n">user_interactions</span><span class="p">:</span>
+        <span class="c1"># CTR calculation</span>
+        <span class="k">if</span> <span class="n">interaction</span><span class="o">.</span><span class="n">clicked</span><span class="p">:</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;click_through_rate&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Time spent calculation</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;time_on_property&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">interaction</span><span class="o">.</span><span class="n">time_spent</span>
+
+        <span class="c1"># Conversion calculations</span>
+        <span class="k">if</span> <span class="n">interaction</span><span class="o">.</span><span class="n">made_inquiry</span><span class="p">:</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;inquiry_conversion_rate&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">interaction</span><span class="o">.</span><span class="n">bookmarked</span><span class="p">:</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;bookmark_rate&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Average calculations</span>
+    <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">:</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">/=</span> <span class="n">total_sessions</span>
+
+    <span class="k">return</span> <span class="n">metrics</span>
+</code></pre></div>
+
+<h4 id="3-confusion-matrix-for-classification-tasks">3. Confusion Matrix for Classification Tasks:</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">calculate_confusion_matrix</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary classification: Relevant vs Non-Relevant properties&quot;&quot;&quot;</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">true</span><span class="p">,</span> <span class="n">pred</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span> <span class="k">if</span> <span class="n">true</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">pred</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">fp</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">true</span><span class="p">,</span> <span class="n">pred</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span> <span class="k">if</span> <span class="n">true</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">pred</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">true</span><span class="p">,</span> <span class="n">pred</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span> <span class="k">if</span> <span class="n">true</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">pred</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">tn</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">true</span><span class="p">,</span> <span class="n">pred</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span> <span class="k">if</span> <span class="n">true</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">pred</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">confusion_matrix</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">[</span><span class="n">tp</span><span class="p">,</span> <span class="n">fp</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">fn</span><span class="p">,</span> <span class="n">tn</span><span class="p">]</span>
+    <span class="p">]</span>
+
+    <span class="n">precision</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fp</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">recall</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">f1_score</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">precision</span> <span class="o">*</span> <span class="n">recall</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">precision</span> <span class="o">+</span> <span class="n">recall</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">precision</span> <span class="o">+</span> <span class="n">recall</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">tn</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fp</span> <span class="o">+</span> <span class="n">fn</span> <span class="o">+</span> <span class="n">tn</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;confusion_matrix&#39;</span><span class="p">:</span> <span class="n">confusion_matrix</span><span class="p">,</span>
+        <span class="s1">&#39;precision&#39;</span><span class="p">:</span> <span class="n">precision</span><span class="p">,</span>
+        <span class="s1">&#39;recall&#39;</span><span class="p">:</span> <span class="n">recall</span><span class="p">,</span>
+        <span class="s1">&#39;f1_score&#39;</span><span class="p">:</span> <span class="n">f1_score</span><span class="p">,</span>
+        <span class="s1">&#39;accuracy&#39;</span><span class="p">:</span> <span class="n">accuracy</span>
+    <span class="p">}</span>
+</code></pre></div>
+
+<hr />
+<h2 id="hyperparameter-tuning">Hyperparameter Tuning</h2>
+<h3 id="key-hyperparameters-and-optimization">Key Hyperparameters and Optimization</h3>
+<h4 id="1-tf-idf-vectorizer-parameters">1. TF-IDF Vectorizer Parameters:</h4>
+<div class="codehilite"><pre><span></span><code><span class="n">tfidf_param_grid</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;max_features&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">3000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">],</span>
+    <span class="s1">&#39;ngram_range&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)],</span>
+    <span class="s1">&#39;min_df&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+    <span class="s1">&#39;max_df&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">],</span>
+    <span class="s1">&#39;sublinear_tf&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
+    <span class="s1">&#39;use_idf&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c1"># Grid search for optimal parameters</span>
+<span class="n">best_params</span> <span class="o">=</span> <span class="n">grid_search_tfidf</span><span class="p">(</span><span class="n">tfidf_param_grid</span><span class="p">,</span> <span class="n">validation_data</span><span class="p">)</span>
+</code></pre></div>
+
+<h4 id="2-recommendation-scoring-weights">2. Recommendation Scoring Weights:</h4>
+<div class="codehilite"><pre><span></span><code><span class="n">scoring_weights_grid</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;content_score_weight&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+    <span class="s1">&#39;semantic_score_weight&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">],</span>
+    <span class="s1">&#39;price_score_weight&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+    <span class="s1">&#39;location_score_weight&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
+    <span class="s1">&#39;amenity_score_weight&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.03</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">optimize_scoring_weights</span><span class="p">(</span><span class="n">validation_data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Optimize recommendation scoring weights using validation data&quot;&quot;&quot;</span>
+    <span class="n">best_score</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">best_weights</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">content_w</span> <span class="ow">in</span> <span class="n">scoring_weights_grid</span><span class="p">[</span><span class="s1">&#39;content_score_weight&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">semantic_w</span> <span class="ow">in</span> <span class="n">scoring_weights_grid</span><span class="p">[</span><span class="s1">&#39;semantic_score_weight&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">price_w</span> <span class="ow">in</span> <span class="n">scoring_weights_grid</span><span class="p">[</span><span class="s1">&#39;price_score_weight&#39;</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">location_w</span> <span class="ow">in</span> <span class="n">scoring_weights_grid</span><span class="p">[</span><span class="s1">&#39;location_score_weight&#39;</span><span class="p">]:</span>
+                    <span class="k">for</span> <span class="n">amenity_w</span> <span class="ow">in</span> <span class="n">scoring_weights_grid</span><span class="p">[</span><span class="s1">&#39;amenity_score_weight&#39;</span><span class="p">]:</span>
+
+                        <span class="c1"># Ensure weights sum to 1</span>
+                        <span class="n">total_weight</span> <span class="o">=</span> <span class="n">content_w</span> <span class="o">+</span> <span class="n">semantic_w</span> <span class="o">+</span> <span class="n">price_w</span> <span class="o">+</span> <span class="n">location_w</span> <span class="o">+</span> <span class="n">amenity_w</span>
+                        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">total_weight</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.01</span><span class="p">:</span>
+                            <span class="k">continue</span>
+
+                        <span class="n">weights</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">content_w</span><span class="p">,</span>
+                            <span class="s1">&#39;semantic&#39;</span><span class="p">:</span> <span class="n">semantic_w</span><span class="p">,</span>
+                            <span class="s1">&#39;price&#39;</span><span class="p">:</span> <span class="n">price_w</span><span class="p">,</span>
+                            <span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="n">location_w</span><span class="p">,</span>
+                            <span class="s1">&#39;amenity&#39;</span><span class="p">:</span> <span class="n">amenity_w</span>
+                        <span class="p">}</span>
+
+                        <span class="c1"># Evaluate with these weights</span>
+                        <span class="n">score</span> <span class="o">=</span> <span class="n">evaluate_recommendation_quality</span><span class="p">(</span><span class="n">validation_data</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                            <span class="n">best_score</span> <span class="o">=</span> <span class="n">score</span>
+                            <span class="n">best_weights</span> <span class="o">=</span> <span class="n">weights</span>
+
+    <span class="k">return</span> <span class="n">best_weights</span><span class="p">,</span> <span class="n">best_score</span>
+</code></pre></div>
+
+<h4 id="3-clustering-parameters">3. Clustering Parameters:</h4>
+<div class="codehilite"><pre><span></span><code><span class="n">clustering_param_grid</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;n_clusters&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">15</span><span class="p">],</span>
+    <span class="s1">&#39;init&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;k-means++&#39;</span><span class="p">,</span> <span class="s1">&#39;random&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;n_init&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span>
+    <span class="s1">&#39;max_iter&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">300</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">],</span>
+    <span class="s1">&#39;random_state&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">42</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">optimize_clustering</span><span class="p">(</span><span class="n">property_features</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find optimal clustering parameters using silhouette score&quot;&quot;&quot;</span>
+    <span class="n">best_silhouette</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">best_params</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">n_clusters</span> <span class="ow">in</span> <span class="n">clustering_param_grid</span><span class="p">[</span><span class="s1">&#39;n_clusters&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">init</span> <span class="ow">in</span> <span class="n">clustering_param_grid</span><span class="p">[</span><span class="s1">&#39;init&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">n_init</span> <span class="ow">in</span> <span class="n">clustering_param_grid</span><span class="p">[</span><span class="s1">&#39;n_init&#39;</span><span class="p">]:</span>
+
+                <span class="n">kmeans</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span>
+                    <span class="n">n_clusters</span><span class="o">=</span><span class="n">n_clusters</span><span class="p">,</span>
+                    <span class="n">init</span><span class="o">=</span><span class="n">init</span><span class="p">,</span>
+                    <span class="n">n_init</span><span class="o">=</span><span class="n">n_init</span><span class="p">,</span>
+                    <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span>
+                <span class="p">)</span>
+
+                <span class="n">cluster_labels</span> <span class="o">=</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">fit_predict</span><span class="p">(</span><span class="n">property_features</span><span class="p">)</span>
+                <span class="n">silhouette_avg</span> <span class="o">=</span> <span class="n">silhouette_score</span><span class="p">(</span><span class="n">property_features</span><span class="p">,</span> <span class="n">cluster_labels</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">silhouette_avg</span> <span class="o">&gt;</span> <span class="n">best_silhouette</span><span class="p">:</span>
+                    <span class="n">best_silhouette</span> <span class="o">=</span> <span class="n">silhouette_avg</span>
+                    <span class="n">best_params</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;n_clusters&#39;</span><span class="p">:</span> <span class="n">n_clusters</span><span class="p">,</span>
+                        <span class="s1">&#39;init&#39;</span><span class="p">:</span> <span class="n">init</span><span class="p">,</span>
+                        <span class="s1">&#39;n_init&#39;</span><span class="p">:</span> <span class="n">n_init</span>
+                    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">best_params</span><span class="p">,</span> <span class="n">best_silhouette</span>
+</code></pre></div>
+
+<hr />
+<h2 id="future-enhancements">Future Enhancements</h2>
+<h3 id="recommended-ai-system-improvements">Recommended AI System Improvements</h3>
+<h4 id="1-advanced-machine-learning-models">1. Advanced Machine Learning Models:</h4>
+<ul>
+<li><strong>Deep Learning</strong>: Implement neural networks for complex pattern recognition</li>
+<li><strong>Ensemble Methods</strong>: Combine multiple algorithms (Random Forest, XGBoost, Neural Networks)</li>
+<li><strong>Graph Neural Networks</strong>: Model relationships between properties, users, and locations</li>
+<li><strong>Transformer Models</strong>: Use BERT/GPT for advanced natural language understanding</li>
+</ul>
+<h4 id="2-real-time-learning-systems">2. Real-time Learning Systems:</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">OnlineLearningSystem</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Continuous learning from user interactions&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">online_model</span> <span class="o">=</span> <span class="n">SGDRegressor</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="s1">&#39;adaptive&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_buffer</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_buffer</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_from_interaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_interaction</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update model with new user interaction data&quot;&quot;&quot;</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_interaction_features</span><span class="p">(</span><span class="n">user_interaction</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_relevance_score</span><span class="p">(</span><span class="n">user_interaction</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+        <span class="c1"># Batch update every N interactions</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_buffer</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">online_model</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_buffer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_buffer</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">feature_buffer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_buffer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+</code></pre></div>
+
+<h4 id="3-multi-modal-ai-integration">3. Multi-Modal AI Integration:</h4>
+<ul>
+<li><strong>Image Recognition</strong>: Analyze property photos for automatic feature detection</li>
+<li><strong>Virtual Tour Analysis</strong>: Extract insights from 360° property tours</li>
+<li><strong>Satellite Imagery</strong>: Neighborhood analysis using satellite/aerial images</li>
+<li><strong>Voice Interface</strong>: Natural language voice queries and responses</li>
+</ul>
+<h4 id="4-advanced-personalization">4. Advanced Personalization:</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">UserPersonalizationEngine</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Advanced user modeling and personalization&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_user_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build comprehensive user preference profile&quot;&quot;&quot;</span>
+        <span class="n">interactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_user_interactions</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">searches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_user_searches</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">favorites</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_user_favorites</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+
+        <span class="c1"># Implicit preference learning</span>
+        <span class="n">price_preferences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">infer_price_preferences</span><span class="p">(</span><span class="n">interactions</span><span class="p">)</span>
+        <span class="n">location_preferences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">infer_location_preferences</span><span class="p">(</span><span class="n">searches</span><span class="p">)</span>
+        <span class="n">style_preferences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">infer_style_preferences</span><span class="p">(</span><span class="n">favorites</span><span class="p">)</span>
+
+        <span class="c1"># Temporal preference changes</span>
+        <span class="n">preference_evolution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_preference_changes</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">UserProfile</span><span class="p">(</span>
+            <span class="n">price_range</span><span class="o">=</span><span class="n">price_preferences</span><span class="p">,</span>
+            <span class="n">preferred_locations</span><span class="o">=</span><span class="n">location_preferences</span><span class="p">,</span>
+            <span class="n">style_preferences</span><span class="o">=</span><span class="n">style_preferences</span><span class="p">,</span>
+            <span class="n">preference_stability</span><span class="o">=</span><span class="n">preference_evolution</span>
+        <span class="p">)</span>
+</code></pre></div>
+
+<h4 id="5-market-intelligence-integration">5. Market Intelligence Integration:</h4>
+<ul>
+<li><strong>Price Prediction Models</strong>: Machine learning for property value forecasting</li>
+<li><strong>Market Trend Analysis</strong>: Time series analysis for market conditions</li>
+<li><strong>Investment Analytics</strong>: ROI and market performance predictions</li>
+<li><strong>Neighborhood Scoring</strong>: Dynamic neighborhood desirability metrics</li>
+</ul>
+<h4 id="6-ab-testing-framework">6. A/B Testing Framework:</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ABTestingFramework</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Systematic testing of algorithm improvements&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_experiment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiment_name</span><span class="p">,</span> <span class="n">algorithm_variants</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create A/B test for algorithm comparison&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Experiment</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">experiment_name</span><span class="p">,</span>
+            <span class="n">variants</span><span class="o">=</span><span class="n">algorithm_variants</span><span class="p">,</span>
+            <span class="n">traffic_split</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+            <span class="n">success_metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;ctr&#39;</span><span class="p">,</span> <span class="s1">&#39;conversion_rate&#39;</span><span class="p">,</span> <span class="s1">&#39;user_satisfaction&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiment_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Statistical significance analysis of A/B test results&quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_experiment_data</span><span class="p">(</span><span class="n">experiment_id</span><span class="p">)</span>
+
+        <span class="c1"># Statistical tests</span>
+        <span class="n">t_stat</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">ttest_ind</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">variant_a</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">variant_b</span><span class="p">)</span>
+        <span class="n">effect_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_effect_size</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">variant_a</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">variant_b</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ABTestResults</span><span class="p">(</span>
+            <span class="n">statistical_significance</span><span class="o">=</span><span class="n">p_value</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">,</span>
+            <span class="n">effect_size</span><span class="o">=</span><span class="n">effect_size</span><span class="p">,</span>
+            <span class="n">recommendation</span><span class="o">=</span><span class="s2">&quot;implement&quot;</span> <span class="k">if</span> <span class="n">effect_size</span> <span class="o">&gt;</span> <span class="mf">0.1</span> <span class="k">else</span> <span class="s2">&quot;continue_testing&quot;</span>
+        <span class="p">)</span>
+</code></pre></div>
+
+<hr />
+<h2 id="technical-architecture-summary">Technical Architecture Summary</h2>
+<h3 id="system-integration-flow">System Integration Flow</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">User</span><span class="w"> </span><span class="n">Natural</span><span class="w"> </span><span class="n">Language</span><span class="w"> </span><span class="n">Query</span>
+<span class="w">          </span><span class="err">↓</span>
+<span class="p">[</span><span class="n">Enhanced</span><span class="w"> </span><span class="n">NLP</span><span class="w"> </span><span class="n">Parser</span><span class="p">]</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Extract</span><span class="w"> </span><span class="mi">50</span><span class="o">+</span><span class="w"> </span><span class="n">Features</span>
+<span class="w">          </span><span class="err">↓</span>
+<span class="p">[</span><span class="n">Database</span><span class="w"> </span><span class="n">Search</span><span class="w"> </span><span class="n">Engine</span><span class="p">]</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Multi</span><span class="o">-</span><span class="n">field</span><span class="w"> </span><span class="n">Exact</span><span class="w"> </span><span class="n">Matching</span>
+<span class="w">          </span><span class="err">↓</span>
+<span class="p">[</span><span class="n">Keyword</span><span class="w"> </span><span class="n">Expansion</span><span class="p">]</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Synonym</span><span class="w"> </span><span class="n">and</span><span class="w"> </span><span class="n">Context</span><span class="w"> </span><span class="n">Mapping</span>
+<span class="w">          </span><span class="err">↓</span>
+<span class="p">[</span><span class="n">Description</span><span class="w"> </span><span class="n">Mining</span><span class="p">]</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Rich</span><span class="w"> </span><span class="n">Text</span><span class="w"> </span><span class="n">Content</span><span class="w"> </span><span class="n">Analysis</span>
+<span class="w">          </span><span class="err">↓</span>
+<span class="p">[</span><span class="n">ML</span><span class="w"> </span><span class="n">Recommendation</span><span class="w"> </span><span class="n">Engine</span><span class="p">]</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Multi</span><span class="o">-</span><span class="n">Algorithm</span><span class="w"> </span><span class="n">Scoring</span>
+<span class="w">          </span><span class="err">↓</span>
+<span class="p">[</span><span class="n">Agent</span><span class="o">/</span><span class="n">Office</span><span class="w"> </span><span class="n">Integration</span><span class="p">]</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">CREA</span><span class="w"> </span><span class="n">Professional</span><span class="w"> </span><span class="n">Data</span>
+<span class="w">          </span><span class="err">↓</span>
+<span class="p">[</span><span class="n">Response</span><span class="w"> </span><span class="n">Formatting</span><span class="p">]</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Complete</span><span class="w"> </span><span class="n">Property</span><span class="w"> </span><span class="n">Information</span>
+<span class="w">          </span><span class="err">↓</span>
+<span class="n">Comprehensive</span><span class="w"> </span><span class="n">Property</span><span class="w"> </span><span class="n">Results</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">AI</span><span class="w"> </span><span class="n">Insights</span>
+</code></pre></div>
+
+<h3 id="performance-characteristics">Performance Characteristics</h3>
+<ul>
+<li><strong>Query Processing Time</strong>: &lt; 500ms for typical searches</li>
+<li><strong>Database Coverage</strong>: 27,000+ properties across Canada</li>
+<li><strong>NLP Accuracy</strong>: 90%+ feature extraction accuracy</li>
+<li><strong>Search Recall</strong>: 95%+ relevant property discovery</li>
+<li><strong>Response Completeness</strong>: 100% CREA format compliance</li>
+</ul>
+<h3 id="scalability-features">Scalability Features</h3>
+<ul>
+<li><strong>Horizontal Scaling</strong>: Microservice architecture support</li>
+<li><strong>Caching</strong>: Multi-layer caching for performance</li>
+<li><strong>Asynchronous Processing</strong>: Non-blocking ML operations</li>
+<li><strong>Load Balancing</strong>: Distributed query processing</li>
+<li><strong>Database Optimization</strong>: Indexed search fields and relationship loading</li>
+</ul>
+<hr />
+<h2 id="conclusion">Conclusion</h2>
+<p>The Real Estate AI System represents a sophisticated integration of modern NLP, machine learning, and database technologies. The hybrid approach combining exact database filtering with intelligent ML ranking provides both precision and discovery capabilities that serve real estate professionals and consumers effectively.</p>
+<p>The system's strength lies in its multi-modal approach:
+- <strong>Precise Filtering</strong> ensures exact matches for critical criteria
+- <strong>Intelligent Expansion</strong> discovers relevant properties through semantic understanding<br />
+- <strong>Comprehensive Coverage</strong> searches across all available property data
+- <strong>Professional Integration</strong> includes complete CREA agent and office information</p>
+<p>Future enhancements focusing on deep learning, real-time adaptation, and advanced personalization will further improve the system's capability to understand and serve user intent in the complex real estate domain.</p>
+<hr />
+<p><em>Document Version: 1.0</em><br />
+<em>Last Updated: January 2025</em><br />
+<em>System Architecture: Real Estate AI Engine</em></p>
+    </body>
+    </html>
+    

@@ -1,0 +1,11 @@
+{
+  "environment": "development",
+  "training_time": "2025-08-17T15:23:24.468120",
+  "property_count": 5,
+  "model_version": "1.0.0",
+  "features": [
+    "content_filtering",
+    "semantic_similarity",
+    "clustering"
+  ]
+}

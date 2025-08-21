@@ -12,6 +12,53 @@ from notification_service import NotificationService
 
 router = APIRouter(prefix="/property-interests", tags=["property-interests"])
 
+@router.get("/", response_model=List[schemas.PropertyInterestResponse])
+async def get_all_property_interests(
+    status: Optional[str] = Query("active", description="Filter by interest status"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500, description="Number of items per page (max 500)"),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get property interests with role-based access. Admin sees all, agents see their clients only, users redirected to my-interests."""
+    
+    if current_user.role == "admin":
+        # Admins can see all property interests
+        query = db.query(PropertyInterest).options(
+            joinedload(PropertyInterest.property),
+            joinedload(PropertyInterest.user),
+            joinedload(PropertyInterest.agent)
+        )
+        
+    elif current_user.role == "agent":
+        # Agents can see interests from their represented clients
+        client_ids_subquery = db.query(ClientAgentRelationship.client_id).filter(
+            ClientAgentRelationship.agent_id == current_user.user_id,
+            ClientAgentRelationship.status == "active"
+        )
+        
+        query = db.query(PropertyInterest).options(
+            joinedload(PropertyInterest.property),
+            joinedload(PropertyInterest.user),
+            joinedload(PropertyInterest.agent)
+        ).filter(PropertyInterest.user_id.in_(client_ids_subquery))
+        
+    else:
+        # Regular users should use /my-interests instead
+        raise HTTPException(
+            status_code=403,
+            detail="Use /my-interests endpoint to view your own property interests"
+        )
+    
+    # Apply filters
+    if status:
+        query = query.filter(PropertyInterest.status == status)
+    
+    # Apply pagination and ordering
+    interests = query.order_by(PropertyInterest.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return interests
+
 @router.post("/", response_model=schemas.PropertyInterestResponse, status_code=status.HTTP_201_CREATED)
 async def express_property_interest(
     interest_data: schemas.PropertyInterestCreate,

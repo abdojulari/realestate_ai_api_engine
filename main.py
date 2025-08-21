@@ -1,36 +1,41 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 import uvicorn
 from contextlib import asynccontextmanager
+import hashlib
+import json
+import time
 
 # Import database setup
-from database import create_tables, engine
+from database import engine
 from db_models import Base
 
 # Import routers
-from routers import users, properties, amenities, saved_searches, views, ai, property_types, agent_discovery, property_interests, notifications, agent_profiles, neighbourhoods, schools, market_insights, crea_api
+from routers import users, properties, amenities, saved_searches, views, ai, property_types, agent_discovery, property_interests, notifications, agent_profiles, neighbourhoods, schools, market_insights, crea_api, market_data, dailytips, leads, emails, agent_onboarding
 # Note: Removed legacy 'agents' router - now using enhanced agent_discovery and agent_profiles
 
 # Import existing functionality
 from parser import extract_filters
 from embedder import generate_embedding
-from connector_mock import search_properties
 from matcher import rank_listings
 from scheduler import schedule_user_task
 from models import Prompt
+
+# Simple mock function for legacy endpoint
+def search_properties(filters):
+    """Mock function for legacy endpoint compatibility."""
+    return []
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan events."""
     # Startup
-    print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
-    print("Database tables created successfully!")
     yield
     # Shutdown
-    print("Application shutting down...")
 
 # Create FastAPI app with lifespan
 app = FastAPI(
@@ -48,6 +53,58 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add compression middleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Add ETag and caching middleware
+@app.middleware("http")
+async def add_etag_and_cache_headers(request: Request, call_next):
+    """Add ETag and cache headers for better performance."""
+    
+    # Skip ETag for non-GET requests
+    if request.method != "GET":
+        response = await call_next(request)
+        return response
+    
+    # Check if client sent If-None-Match header
+    if_none_match = request.headers.get("if-none-match")
+    
+    # Process the request
+    response = await call_next(request)
+    
+    # Only add ETag for successful JSON responses
+    if (response.status_code == 200 and 
+        response.headers.get("content-type", "").startswith("application/json")):
+        
+        # Get response body for ETag calculation
+        response_body = b""
+        async for chunk in response.body_iterator:
+            response_body += chunk
+        
+        # Calculate ETag based on content
+        etag = hashlib.md5(response_body).hexdigest()
+        
+        # Check if client has the same version
+        if if_none_match and if_none_match.strip('"') == etag:
+            return Response(status_code=304, headers={
+                "ETag": f'"{etag}"',
+                "Cache-Control": "public, max-age=300"  # 5 minutes
+            })
+        
+        # Add ETag and cache headers to response
+        response.headers["ETag"] = f'"{etag}"'
+        response.headers["Cache-Control"] = "public, max-age=300"  # 5 minutes
+        
+        # Recreate response with body
+        return Response(
+            content=response_body,
+            status_code=response.status_code,
+            headers=dict(response.headers),
+            media_type=response.headers.get("content-type")
+        )
+    
+    return response
 
 # Include routers
 app.include_router(users.router, prefix="/api/v1")
@@ -72,6 +129,19 @@ app.include_router(market_insights.router, prefix="/api/v1")
 
 # CREA API testing router
 app.include_router(crea_api.router, prefix="/api/v1")
+
+# Market data router
+app.include_router(market_data.router)
+
+# Daily Tips (Admin only)
+app.include_router(dailytips.router, prefix="/api/v1")
+
+# Lead Management System
+app.include_router(leads.router, prefix="/api/v1")
+
+# Email Service API
+app.include_router(emails.router, prefix="/api/v1")
+app.include_router(agent_onboarding.router, prefix="/api/v1")
 
 # Health check endpoint
 @app.get("/health")

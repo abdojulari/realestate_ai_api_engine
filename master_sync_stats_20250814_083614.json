@@ -1,0 +1,15 @@
+{
+  "total_start_time": "2025-08-14 08:36:12.755349",
+  "property_sync": {},
+  "agent_sync": {},
+  "housing_data_sync": {
+    "status": "success",
+    "regions": 4
+  },
+  "province_sync": {},
+  "errors": [],
+  "warnings": [
+    "DRY RUN MODE - No changes will be saved",
+    "QUICK MODE - Limited scope sync"
+  ]
+}
