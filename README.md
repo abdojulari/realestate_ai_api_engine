@@ -176,14 +176,13 @@ The full list, including path parameters, is at http://127.0.0.1:8000/docs.
 ## TODO 
 
 - [x] Create a frontend UI 
-- [x] Create a chatting capability, a mlsGPT, a simple tool that lets users find properties by describing what they are looking for in everyday language (design a custom machine learning model)
+- [x] Create a chatting capability, a mlsGPT, a simple tool that lets users find properties by describing what they are looking for in everyday language (using existing model)
 - [x] Create end-to-end, smoke and unit testings 
 - [x] Enable multi-factor authentication 
 - [x] redesign the architecture to allow tenant to be able to configure their respectful Data feed providers
 - [x] Support with in-app notification, tenant-based email notifications
 - [x] Create deployment script for production 
 - [x] Use opentelemetry for logging 
-- [x] evaluate the model to ensure between 95 - 98 % accuracy
 
 ## License
 
