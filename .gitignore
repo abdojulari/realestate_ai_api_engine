@@ -1,5 +1,8 @@
 # Environment variables
 .env
+.cursor/
+.cursorrules
+cursor 
 
 # Virtual environments
 venv/
@@ -125,6 +128,7 @@ cython_debug/
 *.sqlite3
 *.db
 
-master_sync_stats_20250814_132308.json
+master_sync_stats_*.json
 *.log
+*.pdf
 *.json

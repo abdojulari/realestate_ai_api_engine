@@ -15,7 +15,8 @@ class CREATokenHandler:
         self.client_secret = os.getenv("CREA_CLIENT_SECRET")
         self.access_token = None
         self.token_expires_at = None
-        
+    
+    def _require_credentials(self) -> None:
         if not self.client_id or not self.client_secret:
             raise ValueError("CREA_CLIENT_ID and CREA_CLIENT_SECRET must be set in environment variables")
     
@@ -32,6 +33,7 @@ class CREATokenHandler:
         """
         Request a new access token from the CREA API
         """
+        self._require_credentials()
         headers = {
             "Content-Type": "application/x-www-form-urlencoded"
         }
