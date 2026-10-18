@@ -19,8 +19,6 @@ from routers import users, properties, amenities, saved_searches, views, ai, pro
 
 # Import existing functionality
 from parser import extract_filters
-from embedder import generate_embedding
-from matcher import rank_listings
 from scheduler import schedule_user_task
 from models import Prompt
 
@@ -40,7 +38,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app with lifespan
 app = FastAPI(
     title="Real Estate AI Engine API",
-    description="Comprehensive real estate management API with AI-powered search and recommendations",
+    description="Real estate management API with search, users, agents, and market data",
     version="2.0.0",
     lifespan=lifespan
 )
@@ -159,7 +157,7 @@ async def root():
         "docs": "/docs",
         "health": "/health",
         "features": {
-            "ai_powered_search": "Advanced property search with NLP",
+            "property_search": "Search listings with filters parsed from plain text",
             "role_based_access": "Admin, Agent, Customer, Client roles",
             "agent_discovery": "Find and connect with real estate agents",
             "client_management": "Agent-client relationship management",
@@ -207,10 +205,8 @@ def parse_prompt(prompt: Prompt):
     """Legacy endpoint - use /api/v1/ai/parse instead."""
     try:
         filters = extract_filters(prompt.prompt)
-        embedding = generate_embedding(prompt.prompt)
         listings = search_properties(filters)
-        ranked = rank_listings(listings, embedding)
-        return {"filters": filters, "results": ranked[:10]}
+        return {"filters": filters, "results": listings[:10]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing prompt: {str(e)}")
 

@@ -1,6 +1,8 @@
-# Real Estate AI Engine API
+# Real Estate - MLS-I
 
-FastAPI service for property search, users, agents, market data, and CREA integration.
+MLS Intelligence (MLS-I) is a real estate search platform. Listing data in the seed set is fictional. People describe what they want in everyday language, and the API turns that into database filters such as city, price, and bedrooms.
+
+This project does not build, train, fine-tune, or evaluate a model, and it does not call a model API.
 
 The API is running at `http://127.0.0.1:8000`.
 
@@ -138,12 +140,10 @@ curl "http://127.0.0.1:8000/api/v1/crea/market/daily-report"
 | Agent onboarding | GET | `/api/v1/agent-onboarding/search-profile` |
 | AI | POST | `/api/v1/ai/parse` |
 | AI | POST | `/api/v1/ai/subscribe` |
-| AI | POST | `/api/v1/ai/recommend-properties` |
-| AI | POST | `/api/v1/ai/analyze-market` |
-| AI | POST | `/api/v1/ai/generate-description` |
-| AI | GET | `/api/v1/ai/similar-properties/{property_id}` |
-| AI | GET | `/api/v1/ai/model-status` |
-| AI | POST | `/api/v1/ai/retrain-model` |
+| Search | POST | `/api/v1/ai/recommend-properties` |
+| Search | POST | `/api/v1/ai/analyze-market` |
+| Search | POST | `/api/v1/ai/generate-description` |
+| Search | GET | `/api/v1/ai/similar-properties/{property_id}` |
 | Market | GET | `/api/v1/market/health` |
 | Market | GET | `/api/v1/market/statistics` |
 | Market | GET | `/api/v1/market/trends` |
@@ -176,13 +176,15 @@ The full list, including path parameters, is at http://127.0.0.1:8000/docs.
 ## TODO 
 
 - [x] Create a frontend UI 
-- [x] Create a chatting capability, a mlsGPT, a simple tool that lets users find properties by describing what they are looking for in everyday language (using existing model)
+- [x] Let users find properties by describing what they want in everyday language. The parser uses rules and database filters, not a model.
 - [x] Create end-to-end, smoke and unit testings 
 - [x] Enable multi-factor authentication 
 - [x] redesign the architecture to allow tenant to be able to configure their respectful Data feed providers
 - [x] Support with in-app notification, tenant-based email notifications
 - [x] Create deployment script for production 
 - [x] Use opentelemetry for logging 
+- [x] Create a customer retention pipeline funnel to track engagement, improve loyalty and keep customers coming back
+- [x] Do not build, train, or fine-tune a custom model. Property matching uses database filters.
 
 ## License
 

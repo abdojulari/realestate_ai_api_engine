@@ -1,11 +1,8 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from emailer import send_property_email
 from enhanced_parser import EnhancedRealEstateParser
-from recommendation_engine import UserPreferences
-from model_manager import get_recommendation_engine
 from database import SessionLocal
 from db_models import Property
-import os
 import logging
 import asyncio
 
@@ -14,49 +11,7 @@ logger = logging.getLogger(__name__)
 scheduler = BackgroundScheduler()
 scheduler.start()
 
-# Initialize enhanced AI components
-environment = os.getenv('ENVIRONMENT', 'development')
 enhanced_parser = EnhancedRealEstateParser()
-recommendation_engine = get_recommendation_engine(environment)
-
-def convert_requirements_to_preferences(requirements):
-    """Convert enhanced parser requirements to UserPreferences for ML engine"""
-    # Extract amenities from requirements
-    amenities = []
-    if requirements.garage_type or requirements.garage_spaces:
-        amenities.append('garage')
-    if requirements.basement_developed:
-        amenities.append('finished_basement')
-    if requirements.fireplace:
-        amenities.append('fireplace')
-    
-    # Extract lifestyle keywords
-    lifestyle_keywords = []
-    if requirements.bonus_room:
-        lifestyle_keywords.append('bonus_room')
-    if requirements.spice_kitchen:
-        lifestyle_keywords.append('spice_kitchen')
-    if requirements.open_to_below or requirements.open_to_above:
-        lifestyle_keywords.append('open_concept')
-    if any([requirements.cities and 'edmonton' in ' '.join(requirements.cities).lower(),
-            requirements.neighborhoods and any('edmonton' in n.lower() for n in requirements.neighborhoods)]):
-        lifestyle_keywords.append('edmonton')
-    if requirements.school_ratings == 'high':
-        lifestyle_keywords.extend(['family', 'education', 'good_schools'])
-    
-    return UserPreferences(
-        max_price=requirements.max_price,
-        min_price=requirements.min_price,
-        preferred_bedrooms=requirements.bedrooms_total,
-        preferred_bathrooms=requirements.bathrooms_total or requirements.bathrooms_full,
-        min_sqft=requirements.square_feet_min,
-        max_sqft=requirements.square_feet_max,
-        preferred_types=requirements.property_types if requirements.property_types else [],
-        preferred_locations=(requirements.cities or []) + (requirements.neighborhoods or []),
-        must_have_amenities=amenities,
-        garage_required=requirements.garage_spaces is not None or requirements.garage_type is not None,
-        lifestyle_keywords=lifestyle_keywords
-    )
 
 def get_properties_from_database():
     """Get properties from the real database instead of mock data"""
@@ -64,7 +19,6 @@ def get_properties_from_database():
         db = SessionLocal()
         properties = db.query(Property).limit(1000).all()  # Get up to 1000 properties
         
-        # Convert to format expected by recommendation engine
         property_data = []
         for prop in properties:
             property_dict = {
@@ -94,86 +48,69 @@ def get_properties_from_database():
         # Fallback to empty list or raise exception
         return []
 
+def matches_requirements(prop, requirements):
+    if requirements.max_price is not None and prop.get("price", 0) > requirements.max_price:
+        return False
+    if requirements.min_price is not None and prop.get("price", 0) < requirements.min_price:
+        return False
+    if requirements.bedrooms_total is not None and prop.get("bedrooms", 0) < requirements.bedrooms_total:
+        return False
+    bathrooms = requirements.bathrooms_total or requirements.bathrooms_full
+    if bathrooms is not None and prop.get("bathrooms", 0) < bathrooms:
+        return False
+    if requirements.square_feet_min is not None and prop.get("sqft", 0) < requirements.square_feet_min:
+        return False
+    if requirements.square_feet_max is not None and prop.get("sqft", 0) > requirements.square_feet_max:
+        return False
+    places = [place.lower() for place in (requirements.cities or []) + (requirements.neighborhoods or [])]
+    if places:
+        city = (prop.get("city") or "").lower()
+        address = (prop.get("address") or "").lower()
+        if not any(place in city or place in address for place in places):
+            return False
+    if (requirements.garage_spaces or requirements.garage_type) and not prop.get("garage_spaces"):
+        return False
+    return True
+
 def enhanced_user_job(email, prompt, frequency):
-    """Enhanced user job using AI components and real database"""
+    """Send listings that match the subscriber's saved filters."""
     try:
-        logger.info(f"Running enhanced subscription job for {email}")
-        
-        # Step 1: Use enhanced parser to extract comprehensive requirements
+        logger.info(f"Running subscription job for {email}")
         requirements = enhanced_parser.parse_comprehensive(prompt)
-        logger.info(f"Enhanced parser extracted requirements for {email}")
-        
-        # Step 2: Convert to UserPreferences for ML engine
-        user_prefs = convert_requirements_to_preferences(requirements)
-        
-        # Step 3: Load real properties from database
         property_data = get_properties_from_database()
-        
         if not property_data:
             logger.warning(f"No properties found in database for subscription {email}")
             return
-        
-        # Step 4: Update recommendation engine with current property data
-        recommendation_engine.load_properties(property_data)
-        
-        # Step 5: Get ML-powered recommendations
-        recommendations = recommendation_engine.recommend_properties(
-            user_prefs,
-            user_id=None,  # No specific user ID for email subscriptions
-            top_k=10,
-            explain=True
-        )
-        
-        # Step 6: Format properties for email
+
         email_properties = []
-        for rec in recommendations[:5]:  # Top 5 for email
-            # Handle RecommendationScore object
-            if hasattr(rec, 'property_id'):
-                # Find the property data from property_data
-                prop_data = next((p for p in property_data if p['id'] == rec.property_id), {})
-                email_properties.append({
-                    'id': prop_data.get('id'),
-                    'price': prop_data.get('price'),
-                    'bedrooms': prop_data.get('bedrooms'),
-                    'bathrooms': prop_data.get('bathrooms'),
-                    'sqft': prop_data.get('sqft'),
-                    'property_type': prop_data.get('property_type'),
-                    'city': prop_data.get('city'),
-                    'address': prop_data.get('address'),
-                    'description': prop_data.get('description'),
-                    'match_score': rec.overall_score,
-                    'match_reasons': rec.explanation
-                })
-            else:
-                # Handle dict format (if different)
-                prop = rec.get('property', {})
-                email_properties.append({
-                    'id': prop.get('id'),
-                    'price': prop.get('price'),
-                    'bedrooms': prop.get('bedrooms'),
-                    'bathrooms': prop.get('bathrooms'),
-                    'sqft': prop.get('sqft'),
-                    'property_type': prop.get('property_type'),
-                    'city': prop.get('city'),
-                    'address': prop.get('address'),
-                    'description': prop.get('description'),
-                    'match_score': rec.get('total_score', 0),
-                    'match_reasons': rec.get('explanation', {})
-                })
-        
-        # Step 7: Send enhanced email with ML recommendations
-        send_enhanced_property_email(email, email_properties, requirements, user_prefs, frequency)
+        for prop in property_data:
+            if not matches_requirements(prop, requirements):
+                continue
+            email_properties.append({
+                "id": prop.get("id"),
+                "price": prop.get("price"),
+                "bedrooms": prop.get("bedrooms"),
+                "bathrooms": prop.get("bathrooms"),
+                "sqft": prop.get("sqft"),
+                "property_type": prop.get("property_type"),
+                "city": prop.get("city"),
+                "address": prop.get("address"),
+                "description": prop.get("description"),
+            })
+            if len(email_properties) == 5:
+                break
+
+        send_enhanced_property_email(email, email_properties, requirements, frequency)
         
         logger.info(f"Enhanced subscription email sent to {email} with {len(email_properties)} properties")
         
     except Exception as e:
         logger.error(f"Error in enhanced user job for {email}: {e}")
 
-def send_enhanced_property_email(email, properties, requirements, user_prefs, frequency):
-    """Send enhanced email with ML recommendations and detailed matching"""
+def send_enhanced_property_email(email, properties, requirements, frequency):
+    """Send an email listing properties that match the saved filters."""
     try:
-        # Create enhanced email content
-        subject = "🏠 Your AI-Powered Property Recommendations"
+        subject = "Property matches for your saved search"
         
         # Extract key requirements for email summary
         bedroom_details = f"{requirements.bedrooms_total or 'any'} bedrooms"
@@ -212,14 +149,13 @@ def send_enhanced_property_email(email, properties, requirements, user_prefs, fr
             {f"<li><strong>Special Features:</strong> {', '.join(special_features)}</li>" if special_features else ""}
         </ul>
         
-        <h3>🏠 Top {len(properties)} AI-Recommended Properties</h3>
+        <h3>Top {len(properties)} matching properties</h3>
         """
         
         for i, prop in enumerate(properties, 1):
-            match_score = prop.get('match_score', 0)
             email_body += f"""
             <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px;">
-                <h4>#{i} - {prop.get('address', 'Address not available')} ({match_score:.1%} match)</h4>
+                <h4>#{i} - {prop.get('address', 'Address not available')}</h4>
                 <p><strong>Price:</strong> ${prop.get('price', 0):,}</p>
                 <p><strong>Details:</strong> {prop.get('bedrooms', 0)} bed, {prop.get('bathrooms', 0)} bath, {prop.get('sqft', 0):,} sqft</p>
                 <p><strong>Type:</strong> {prop.get('property_type', 'Unknown')} in {prop.get('city', 'Unknown city')}</p>
@@ -229,8 +165,7 @@ def send_enhanced_property_email(email, properties, requirements, user_prefs, fr
         
         email_body += f"""
         <hr>
-        <p><em>🤖 These recommendations were generated using our advanced AI system that analyzed your specific requirements including architectural details, location preferences, and lifestyle needs.</em></p>
-        <p><em>⏰ You'll receive updates every {frequency} hours. Reply to this email to modify your preferences.</em></p>
+        <p><em>These listings match the filters from your saved search. You'll receive updates every {frequency} hours.</em></p>
         """
         
         # Use existing email function or create enhanced version
@@ -242,7 +177,7 @@ def send_enhanced_property_email(email, properties, requirements, user_prefs, fr
         asyncio.run(send_property_email(email, properties[:5]))
 
 def schedule_user_task(prompt):
-    """Schedule enhanced user task with AI components"""
+    """Schedule a saved-search alert."""
     email = prompt.email
     interval = prompt.frequency or 24  # Default to 24 hours instead of 12
     job_id = f"enhanced_job_{email}"

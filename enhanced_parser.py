@@ -5,14 +5,10 @@ This parser can comprehensively extract property features, amenities, location p
 and other detailed requirements from natural language prompts.
 """
 
-import spacy
 import re
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import logging
-
-# Load the spaCy model
-nlp = spacy.load("en_core_web_sm")
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +166,7 @@ class EnhancedRealEstateParser:
         }
         
         self.cities_canada = {
-            'edmonton', 'calgary', 'vancouver', 'toronto', 'montreal', 'ottawa', 'winnipeg',
+            'edmonton', 'calgary', 'vancouver', 'toronto', 'montreal', 'ottawa', 'winnipeg', 'seedville',
             'quebec city', 'hamilton', 'kitchener', 'london', 'st. catharines', 'halifax',
             'victoria', 'windsor', 'oshawa', 'saskatoon', 'regina', 'sherbrooke', 'barrie',
             'st. johns', 'kelowna', 'abbotsford', 'greater sudbury', 'kingston', 'saguenay'
@@ -194,8 +190,6 @@ class EnhancedRealEstateParser:
                  with full bath on main floor"
         """
         text_lower = text.lower()
-        doc = nlp(text)
-        
         requirements = PropertyRequirements()
         
         # Parse bedrooms with context

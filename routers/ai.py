@@ -1,124 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
+import uuid
 
 from database import get_db
 from models import Prompt
 from auth import get_current_user_optional
 from db_models import User
 
-# Import AI functions
-from parser import extract_filters
-from embedder import generate_embedding
-# Simple mock function for legacy compatibility
-def search_properties(filters):
-    """Mock function for legacy endpoint compatibility."""
-    return []
-from matcher import rank_listings
 from scheduler import schedule_user_task
-from recommendation_engine import PropertyRecommendationEngine, UserPreferences, create_sample_data
-from model_manager import get_recommendation_engine, get_model_manager
 from enhanced_parser import PropertyRequirements, extract_filters_enhanced
-import os
 
-router = APIRouter(prefix="/ai", tags=["AI & Natural Language Processing"])
-
-# Initialize recommendation engine
-environment = os.getenv('ENVIRONMENT', 'development')
-recommendation_engine = get_recommendation_engine(environment)
-
-# Helper functions for enhanced parsing
-def convert_requirements_to_preferences(requirements):
-    """Convert enhanced parser requirements to UserPreferences for ML engine"""
-    
-    # Build amenities from parsed features
-    amenities = []
-    if requirements.garage_type or requirements.garage_spaces:
-        amenities.append('garage')
-    if requirements.bonus_room:
-        amenities.append('bonus room')
-    if requirements.spice_kitchen:
-        amenities.append('spice kitchen')
-    if requirements.basement_developed:
-        amenities.append('finished basement')
-    if requirements.deck:
-        amenities.append('deck')
-    if requirements.fireplace:
-        amenities.append('fireplace')
-    if requirements.hardwood_floors:
-        amenities.append('hardwood floors')
-    
-    # Build lifestyle keywords
-    lifestyle_keywords = requirements.lifestyle_keywords.copy() if requirements.lifestyle_keywords else []
-    if requirements.open_concept or requirements.open_to_below or requirements.open_to_above:
-        lifestyle_keywords.extend(['open', 'spacious', 'modern'])
-    if requirements.bonus_room:
-        lifestyle_keywords.extend(['family', 'flexible space'])
-    if requirements.spice_kitchen:
-        lifestyle_keywords.extend(['cooking', 'entertaining', 'luxury'])
-    if requirements.school_ratings == 'high':
-        lifestyle_keywords.extend(['family', 'education', 'good schools'])
-    
-    return UserPreferences(
-        max_price=requirements.max_price,
-        min_price=requirements.min_price,
-        preferred_bedrooms=requirements.bedrooms_total,
-        preferred_bathrooms=requirements.bathrooms_total or requirements.bathrooms_full,
-        min_sqft=requirements.square_feet_min,
-        max_sqft=requirements.square_feet_max,
-        preferred_types=requirements.property_types if requirements.property_types else [],
-        preferred_locations=(requirements.cities or []) + (requirements.neighborhoods or []),
-        must_have_amenities=amenities,
-        garage_required=requirements.garage_spaces is not None or requirements.garage_type is not None,
-        lifestyle_keywords=lifestyle_keywords
-    )
-
-def analyze_requirement_matches(requirements, property_features):
-    """Analyze how well a property matches specific requirements"""
-    matches = {}
-    
-    # Bedroom matching
-    if requirements.bedrooms_total:
-        matches['bedrooms'] = property_features.bedrooms >= requirements.bedrooms_total
-    
-    # Bathroom matching
-    bathroom_req = requirements.bathrooms_total or requirements.bathrooms_full
-    if bathroom_req:
-        matches['bathrooms'] = property_features.bathrooms >= bathroom_req
-    
-    # Price matching
-    if requirements.max_price:
-        matches['price'] = property_features.price <= requirements.max_price
-    
-    # Garage matching
-    if requirements.garage_spaces:
-        matches['garage'] = property_features.garage_spaces and property_features.garage_spaces >= requirements.garage_spaces
-    
-    return matches
-
-def calculate_parsing_confidence(requirements):
-    """Calculate confidence in how well we parsed the requirements"""
-    total_fields = 15  # Major fields we try to parse
-    parsed_fields = 0
-    
-    # Count how many fields we successfully extracted
-    if requirements.bedrooms_total: parsed_fields += 1
-    if requirements.bedrooms_above_grade: parsed_fields += 1
-    if requirements.bedrooms_main_floor: parsed_fields += 1
-    if requirements.bathrooms_total or requirements.bathrooms_full: parsed_fields += 1
-    if requirements.bathrooms_main_floor: parsed_fields += 1
-    if requirements.max_price: parsed_fields += 1
-    if requirements.garage_type: parsed_fields += 1
-    if requirements.garage_spaces: parsed_fields += 1
-    if requirements.bonus_room: parsed_fields += 1
-    if requirements.spice_kitchen: parsed_fields += 1
-    if requirements.open_to_below or requirements.open_to_above: parsed_fields += 1
-    if requirements.cities: parsed_fields += 1
-    if requirements.neighborhoods: parsed_fields += 1
-    if requirements.school_ratings: parsed_fields += 1
-    if requirements.proximity_requirements: parsed_fields += 1
-    
-    return round(parsed_fields / total_fields, 2)
+router = APIRouter(prefix="/ai", tags=["Property search"])
 
 @router.post("/parse")
 async def parse_prompt(
@@ -214,7 +107,7 @@ async def parse_prompt(
             for prop_type in requirements.property_types:
                 type_filters.append(Property.title.ilike(f"%{prop_type}%"))
             query = query.filter(or_(*type_filters))
-        if legacy_filters.get('property_type'):
+        if legacy_filters.get('property_type') and not requirements.property_types:
             query = query.filter(Property.title.ilike(f"%{legacy_filters['property_type']}%"))
         
         # Apply garage filters
@@ -493,14 +386,9 @@ async def generate_property_description(
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """
-    Generate AI-powered property descriptions from features.
-    
-    Takes property features and generates compelling marketing descriptions.
+    Build a property description from the supplied features.
     """
     try:
-        # This could be expanded with actual AI text generation
-        # For now, we'll create a basic template-based description
-        
         bedrooms = property_features.get('bedrooms', 'N/A')
         bathrooms = property_features.get('bathrooms', 'N/A')
         square_feet = property_features.get('square_feet', 'N/A')
@@ -514,7 +402,6 @@ async def generate_property_description(
         return {
             "generated_description": description,
             "features_used": property_features,
-            "confidence": 0.85
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating description: {str(e)}")
@@ -527,9 +414,7 @@ async def analyze_market_trends(
     db: Session = Depends(get_db)
 ):
     """
-    Analyze market trends for a specific location and property type.
-    
-    This endpoint provides AI-powered market insights and trends.
+    Summarize stored market figures for a location and property type.
     """
     try:
         # This would typically connect to market data APIs and AI analysis
@@ -544,7 +429,6 @@ async def analyze_market_trends(
             "days_on_market": "22 days average",
             "inventory_level": "Low",
             "forecast": "Continued growth expected",
-            "ai_confidence": 0.78
         }
         
         return trends
@@ -762,132 +646,45 @@ async def recommend_properties(
 async def get_similar_properties(
     property_id: str,
     top_k: int = 5,
+    db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
-    """
-    Find properties similar to the given property using ML similarity analysis.
-    
-    Uses both feature-based and semantic similarity to find comparable properties.
-    """
-    try:
-        # Get similar properties using ML engine
-        similar_properties = recommendation_engine.get_similar_properties(
-            property_id=property_id,
-            top_k=top_k
-        )
-        
-        # Format response with property details
-        formatted_similar = []
-        for prop_id, similarity_score in similar_properties:
-            prop_features = recommendation_engine.property_features.get(prop_id)
-            if prop_features:
-                formatted_similar.append({
-                    "property_id": prop_id,
-                    "title": f"{prop_features.bedrooms}BR {prop_features.property_type.title()} in {prop_features.location.title()}",
-                    "price": prop_features.price,
-                    "bedrooms": prop_features.bedrooms,
-                    "bathrooms": prop_features.bathrooms,
-                    "square_feet": prop_features.square_feet,
-                    "property_type": prop_features.property_type,
-                    "location": prop_features.location,
-                    "similarity_score": round(similarity_score, 3),
-                    "price_difference": prop_features.price - recommendation_engine.property_features[property_id].price
-                })
-        
-        # Get original property details
-        original_prop = recommendation_engine.property_features.get(property_id)
-        original_info = None
-        if original_prop:
-            original_info = {
-                "property_id": property_id,
-                "title": f"{original_prop.bedrooms}BR {original_prop.property_type.title()} in {original_prop.location.title()}",
-                "price": original_prop.price,
-                "bedrooms": original_prop.bedrooms,
-                "bathrooms": original_prop.bathrooms,
-                "property_type": original_prop.property_type,
-                "location": original_prop.location
-            }
-        
-        return {
-            "original_property": original_info,
-            "similar_properties": formatted_similar,
-            "similarity_algorithm": "combined_feature_semantic",
-            "total_properties_analyzed": len(recommendation_engine.property_features)
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error finding similar properties: {str(e)}")
+    """Find other listings in the same city with the same bedroom count."""
+    from db_models import Property
 
-@router.get("/model-status")
-async def get_model_status(
-    current_user: Optional[User] = Depends(get_current_user_optional)
-):
-    """
-    Get current status and information about the recommendation model.
-    
-    Provides insights into model performance, training status, and health.
-    """
     try:
-        manager = get_model_manager(environment)
-        
-        model_info = manager.get_model_info()
-        health_check = manager.health_check()
-        
-        return {
-            "model_info": model_info,
-            "health_status": health_check,
-            "environment": environment,
-            "endpoints_available": [
-                "/ai/recommend-properties",
-                "/ai/similar-properties/{property_id}",
-                "/ai/model-status",
-                "/ai/retrain-model"
-            ]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting model status: {str(e)}")
+        prop_uuid = uuid.UUID(property_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Property not found")
 
-@router.post("/retrain-model")
-async def retrain_model(
-    current_user: Optional[User] = Depends(get_current_user_optional)
-):
-    """
-    Force retrain the recommendation model with latest data.
-    
-    This endpoint triggers a complete model retraining process.
-    Use with caution in production environments.
-    """
-    try:
-        # Only allow retraining in development or by authenticated users
-        if environment == "production" and not current_user:
-            raise HTTPException(
-                status_code=403, 
-                detail="Authentication required for model retraining in production"
-            )
-        
-        manager = get_model_manager(environment)
-        success = manager.force_retrain()
-        
-        if success:
-            # Update global recommendation engine
-            global recommendation_engine
-            recommendation_engine = manager.recommendation_engine
-            
-            return {
-                "status": "success",
-                "message": "Model retrained successfully",
-                "environment": environment,
-                "training_time": manager.last_trained.isoformat() if manager.last_trained else None,
-                "model_info": manager.get_model_info()
-            }
-        else:
-            raise HTTPException(status_code=500, detail="Model retraining failed")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retraining model: {str(e)}")
+    original = db.query(Property).filter(Property.property_id == prop_uuid).first()
+    if not original:
+        raise HTTPException(status_code=404, detail="Property not found")
+
+    query = db.query(Property).filter(Property.property_id != original.property_id)
+    if original.city:
+        query = query.filter(Property.city.ilike(original.city))
+    if original.bedrooms is not None:
+        query = query.filter(Property.bedrooms == original.bedrooms)
+    matches = query.limit(max(top_k, 1)).all()
+
+    def brief(prop):
+        return {
+            "property_id": str(prop.property_id),
+            "title": prop.title,
+            "price": float(prop.price) if prop.price is not None else None,
+            "bedrooms": prop.bedrooms,
+            "bathrooms": float(prop.bathrooms) if prop.bathrooms is not None else None,
+            "square_feet": prop.square_feet,
+            "city": prop.city,
+            "province": prop.province,
+        }
+
+    return {
+        "original_property": brief(original),
+        "similar_properties": [brief(prop) for prop in matches],
+        "match": "same city and bedroom count",
+    }
 
 # Legacy endpoints for backward compatibility
 @router.post("/parse-legacy", include_in_schema=False)
