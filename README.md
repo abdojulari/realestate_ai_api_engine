@@ -188,4 +188,4 @@ The full list, including path parameters, is at http://127.0.0.1:8000/docs.
 
 ## License
 
-This project is licensed under the MIT License. You may freely use, copy, modify, merge, publish, distribute, sublicense. Redistribution must keep the copyright notice and this license.
+This project is licensed under the MIT License. See [LICENSE](LICENSE). You may freely use, copy, modify, merge, publish, distribute, sublicense, and sell it. Redistribution must keep the copyright notice and this license.
