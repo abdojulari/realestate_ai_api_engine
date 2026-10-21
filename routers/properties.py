@@ -4,15 +4,13 @@ from sqlalchemy import and_, or_
 from typing import List, Optional
 from decimal import Decimal
 import uuid
-import asyncio
-from datetime import datetime, timedelta
 from functools import wraps
 
 from database import get_db
 import schemas
 from schemas import (
     PropertyCreate, PropertyUpdate, PropertyResponse, PropertySearchFilters,
-    Message, PaginatedResponse, CREAAgentProfileResponse, CREAOfficeResponse
+    Message, PaginatedResponse
 )
 from auth import (
     get_current_active_user, require_agent_or_admin, get_current_user_optional,
@@ -21,102 +19,6 @@ from auth import (
 from db_models import Property, User, PropertyType, Amenity, View, PropertyViewHistory, PropertyImage, AgentProfile, Office
 
 router = APIRouter(prefix="/properties", tags=["properties"])
-
-# Cache to track last CREA sync time to prevent excessive API calls  
-_last_crea_sync_cache = {}
-CREA_SYNC_COOLDOWN_MINUTES = 60  # Only sync CREA every 60 minutes max
-
-async def _ensure_fresh_crea_data(db: Session):
-    """
-    Ensure CREA property data is fresh, sync if needed (with cooldown)
-    """
-    try:
-        now = datetime.now()
-        cache_key = "crea_sync"
-        
-        # Check if we've synced recently (cooldown period)
-        if cache_key in _last_crea_sync_cache:
-            last_sync = _last_crea_sync_cache[cache_key]
-            time_since_sync = (now - last_sync).total_seconds() / 60
-            if time_since_sync < CREA_SYNC_COOLDOWN_MINUTES:
-                return  # Skip sync, too recent
-        
-        # Check if we need to sync based on last_property_sync.json
-        import os
-        import json
-        
-        last_sync_file = "last_property_sync.json"
-        needs_sync = True
-        
-        if os.path.exists(last_sync_file):
-            try:
-                with open(last_sync_file, 'r') as f:
-                    data = json.load(f)
-                    last_sync_str = data.get('last_sync')
-                    if last_sync_str:
-                        last_sync_time = datetime.fromisoformat(last_sync_str)
-                        # Check if last sync was more than 24 hours ago
-                        hours_since_sync = (now - last_sync_time).total_seconds() / 3600
-                        needs_sync = hours_since_sync >= 24
-            except Exception as e:
-                print(f"⚠️ Could not read last sync file: {e}")
-        
-        # If sync needed, trigger background CREA sync
-        if needs_sync:
-            # Start sync in true background - don't await it!
-            asyncio.create_task(_background_crea_sync())
-            
-            # Update cache immediately to prevent duplicate syncs
-            _last_crea_sync_cache[cache_key] = now
-            
-    except Exception as e:
-        print(f"⚠️ Auto CREA sync failed: {e}")
-        # Don't fail the API call if sync fails
-
-
-async def _background_crea_sync():
-    """
-    Background CREA property sync task
-    """
-    try:
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, _run_crea_sync)
-        print(f"✅ Background CREA sync completed")
-    except Exception as e:
-        print(f"❌ Background CREA sync error: {e}")
-
-
-def _run_crea_sync():
-    """
-    Run the CREA property sync (synchronous version for executor)
-    """
-    try:
-        # Import the PropertyReplicationSyncer class
-        import sys
-        import os
-        from datetime import datetime, timedelta
-        
-        # Import the syncer class
-        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-        
-        # Import the PropertyReplicationSyncer from daily_property_replication_sync
-        from daily_property_replication_sync import PropertyReplicationSyncer
-        
-        # Create syncer instance
-        syncer = PropertyReplicationSyncer(dry_run=False)
-        
-        # Get the last sync timestamp or use yesterday as default
-        since_date = syncer.get_last_sync_timestamp()
-        
-        # Run incremental sync
-        stats = syncer.sync_properties(since_date, limit=None)
-        
-        print(f"📊 CREA Sync Results: {stats['new_properties']} new, {stats['updated_properties']} updated")
-        
-    except Exception as e:
-        print(f"❌ CREA sync execution error: {e}")
-        import traceback
-        print(traceback.format_exc())
 
 
 def populate_agent_office_data(property_obj: Property, db: Session) -> dict:
@@ -221,26 +123,10 @@ async def get_properties(
     has_basement: Optional[bool] = None,
     status: Optional[str] = Query('available'),
     is_new: Optional[bool] = None,
-    auto_sync: bool = Query(False, description="Automatically sync CREA data if stale"),
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ):
-    """
-    Get properties with filtering options.
-    Set auto_sync=true to trigger background CREA sync if needed.
-    """
-    # Simple auto-sync check (only if explicitly requested)
-    if auto_sync:
-        try:
-            import subprocess
-            print(f"🔄 Starting CREA sync in background...")
-            subprocess.Popen([
-                'python', 'daily_property_replication_sync.py'
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            print(f"✅ CREA sync started")
-        except Exception as e:
-            print(f"⚠️ Could not start sync: {e}")
-    
+    """Get properties with filtering options."""
     query = db.query(Property).options(joinedload(Property.property_type))
     
     # Apply filters
@@ -833,99 +719,4 @@ async def delete_property_image(
                 property_obj.primary_image = None
     
     db.commit()
-    return schemas.Message(message="Image deleted successfully")
-
-
-@router.get("/sync-status")
-async def get_crea_sync_status(db: Session = Depends(get_db)):
-    """
-    Get CREA sync status and data freshness information
-    """
-    try:
-        import os
-        import json
-        
-        now = datetime.now()
-        cache_key = "crea_sync"
-        
-        # Check cache for last sync time
-        last_sync_cached = _last_crea_sync_cache.get(cache_key)
-        
-        # Check last_property_sync.json file
-        last_sync_file = "last_property_sync.json"
-        last_sync_from_file = None
-        
-        if os.path.exists(last_sync_file):
-            try:
-                with open(last_sync_file, 'r') as f:
-                    data = json.load(f)
-                    last_sync_str = data.get('last_sync')
-                    if last_sync_str:
-                        last_sync_from_file = datetime.fromisoformat(last_sync_str)
-            except Exception as e:
-                print(f"Error reading sync file: {e}")
-        
-        # Calculate staleness
-        is_stale = True
-        hours_since_sync = None
-        
-        if last_sync_from_file:
-            hours_since_sync = (now - last_sync_from_file).total_seconds() / 3600
-            is_stale = hours_since_sync >= 24
-        
-        # Check cooldown status
-        next_sync_available = True
-        if last_sync_cached:
-            minutes_since_sync = (now - last_sync_cached).total_seconds() / 60
-            next_sync_available = minutes_since_sync >= CREA_SYNC_COOLDOWN_MINUTES
-        
-        # Count recent properties
-        recent_cutoff = now - timedelta(days=7)
-        recent_properties = db.query(Property).filter(
-            Property.created_at >= recent_cutoff
-        ).count()
-        
-        return {
-            "sync_type": "CREA Property Replication",
-            "is_data_stale": is_stale,
-            "hours_since_last_sync": round(hours_since_sync, 2) if hours_since_sync else None,
-            "last_sync_file": last_sync_from_file.isoformat() if last_sync_from_file else None,
-            "last_sync_cached": last_sync_cached.isoformat() if last_sync_cached else None,
-            "next_sync_available": next_sync_available,
-            "sync_cooldown_minutes": CREA_SYNC_COOLDOWN_MINUTES,
-            "recent_properties_count": recent_properties,
-            "auto_sync_enabled": True,
-            "sync_trigger": "Automatic on /api/v1/properties/ calls",
-            "timestamp": now.isoformat()
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error checking CREA sync status: {str(e)}")
-
-
-@router.post("/sync")
-async def manual_crea_sync(
-    limit: Optional[int] = Query(None, description="Limit number of properties for testing"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_agent_or_admin)
-):
-    """
-    Manually trigger CREA property sync (agents and admins only)
-    """
-    try:
-        # Force sync regardless of cooldown for manual triggers
-        await _background_crea_sync()
-        
-        # Get updated count
-        total_properties = db.query(Property).count()
-        
-        return {
-            "status": "success",
-            "message": "CREA property sync completed",
-            "total_properties_in_db": total_properties,
-            "sync_type": "Manual trigger",
-            "timestamp": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error running manual CREA sync: {str(e)}") 
+    return schemas.Message(message="Image deleted successfully") 

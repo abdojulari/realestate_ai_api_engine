@@ -14,7 +14,7 @@ from database import engine
 from db_models import Base
 
 # Import routers
-from routers import users, properties, amenities, saved_searches, views, ai, property_types, agent_discovery, property_interests, notifications, agent_profiles, neighbourhoods, schools, market_insights, crea_api, market_data, dailytips, leads, emails, agent_onboarding
+from routers import users, properties, amenities, saved_searches, views, ai, property_types, agent_discovery, property_interests, notifications, agent_profiles, neighbourhoods, schools, market_insights, market_data, dailytips, leads, emails, agent_onboarding
 # Note: Removed legacy 'agents' router - now using enhanced agent_discovery and agent_profiles
 
 # Import existing functionality
@@ -124,9 +124,6 @@ app.include_router(agent_profiles.router, prefix="/api/v1")
 app.include_router(neighbourhoods.router, prefix="/api/v1")
 app.include_router(schools.router, prefix="/api/v1")
 app.include_router(market_insights.router, prefix="/api/v1")
-
-# CREA API testing router
-app.include_router(crea_api.router, prefix="/api/v1")
 
 # Market data router
 app.include_router(market_data.router)

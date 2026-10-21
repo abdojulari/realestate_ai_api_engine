@@ -1,11 +1,11 @@
 """
 Lead Management API Router
 
-This module handles lead creation, management, and CREA API integration.
-Automatically syncs crea_agent_key and office_key from AgentProfile.
+This module handles lead creation and management.
+Automatically copies the agent key and office key from AgentProfile.
 
 Endpoints:
-- POST /api/v1/leads/ - Create a new lead and submit to CREA
+- POST /api/v1/leads/ - Create a new lead
 - GET /api/v1/leads/{lead_id} - Get lead details  
 - PUT /api/v1/leads/{lead_id} - Update lead status and notes
 - GET /api/v1/leads/agent/{agent_profile_id} - Get leads for specific agent
@@ -14,13 +14,13 @@ Endpoints:
 import logging
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 
 from database import get_db
 from db_models import Lead, AgentProfile, Property
-from schemas import LeadCreate, LeadResponse, LeadUpdate, CREALeadSubmission
+from schemas import LeadCreate, LeadResponse, LeadUpdate
 from auth import get_current_user
 
 # Configure logging
@@ -33,84 +33,27 @@ router = APIRouter(
 )
 
 
-def submit_lead_to_crea(lead: Lead, db: Session) -> bool:
-    """
-    Submit lead to CREA Lead API in background
-    Updates lead.crea_submission_status when complete
-    """
-    try:
-        from crea_api_client import crea_api
-        
-        # Prepare CREA API payload
-        crea_payload = CREALeadSubmission(
-            Culture=lead.culture,
-            MemberKey=lead.crea_agent_key,
-            ListingKey=lead.listing_key,
-            SenderName=lead.sender_name,
-            SenderEmailAddress=lead.sender_email_address,
-            SenderPhoneNumber=int(lead.sender_phone_number) if lead.sender_phone_number else None,
-            PreferredMethodContact=lead.preferred_method_contact,
-            SenderPhoneExtension=lead.sender_phone_extension,
-            Message=lead.message
-        )
-        
-        logger.info(f"🚀 Submitting lead {lead.lead_id} to CREA for agent {lead.crea_agent_key}")
-        
-        # Submit to CREA API
-        response = crea_api.create_lead(crea_payload.dict())
-        
-        if response:
-            # Update lead with successful submission
-            lead.crea_submission_status = 'submitted'
-            lead.crea_lead_id = str(response.get('LeadId', ''))
-            lead.crea_submitted_at = datetime.utcnow()
-            lead.crea_submission_error = None
-            
-            logger.info(f"✅ Lead {lead.lead_id} successfully submitted to CREA. CREA Lead ID: {lead.crea_lead_id}")
-        else:
-            raise Exception("No response from CREA API")
-            
-    except Exception as e:
-        # Update lead with failure status
-        lead.crea_submission_status = 'failed'
-        lead.crea_submission_error = str(e)
-        
-        logger.error(f"❌ Failed to submit lead {lead.lead_id} to CREA: {e}")
-        
-    finally:
-        # Save the status update
-        db.commit()
-        
-    return lead.crea_submission_status == 'submitted'
-
-
 @router.post("/", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
 async def create_lead(
     lead_data: LeadCreate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
-    Create a new lead and automatically submit to CREA
-    
-    - **agent_profile_id**: Agent to assign lead to
-    - **listing_key**: Property listing key from CREA
+    Create a new lead.
+
+    - **agent_profile_id**: Agent to assign the lead to
+    - **listing_key**: Property listing key
     - **culture**: Language preference (en-CA or fr-CA, defaults to en-CA)
     - **sender_name**: Lead's full name
     - **sender_email_address**: Lead's email
-    - **message**: Lead's message to agent
+    - **message**: Lead's message to the agent
     - **sender_phone_number**: Optional phone number
     - **preferred_method_contact**: email, phone, or text
-    
-    The system automatically:
-    - Fetches crea_agent_key and office_key from AgentProfile
-    - Submits lead to CREA API in background
-    - Tracks submission status
     """
     
     try:
-        # Get agent profile with CREA keys
+        # Get the assigned agent profile
         agent_profile = db.query(AgentProfile).filter(
             AgentProfile.profile_id == lead_data.agent_profile_id
         ).first()
@@ -124,7 +67,7 @@ async def create_lead(
         if not agent_profile.crea_agent_key:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Agent profile {lead_data.agent_profile_id} does not have a CREA agent key"
+                detail=f"Agent profile {lead_data.agent_profile_id} does not have an agent key"
             )
         
         # Verify listing exists
@@ -138,21 +81,21 @@ async def create_lead(
                 detail=f"Property with listing_key {lead_data.listing_key} not found"
             )
         
-        # Create lead with auto-populated CREA fields
+        # Create the lead and copy the agent identifiers from the profile
         new_lead = Lead(
             # Auto-populated from AgentProfile
             agent_profile_id=lead_data.agent_profile_id,
             crea_agent_key=agent_profile.crea_agent_key,
             office_key=agent_profile.office_key,
             
-            # Required CREA fields from user input
+            # Details supplied by the sender
             culture=lead_data.culture,
             listing_key=lead_data.listing_key,
             sender_name=lead_data.sender_name,
             sender_email_address=lead_data.sender_email_address,
             message=lead_data.message,
             
-            # Optional CREA fields
+            # Optional contact details
             sender_phone_number=lead_data.sender_phone_number,
             preferred_method_contact=lead_data.preferred_method_contact,
             sender_phone_extension=lead_data.sender_phone_extension,
@@ -178,10 +121,7 @@ async def create_lead(
         db.commit()
         db.refresh(new_lead)
         
-        # Submit to CREA in background
-        background_tasks.add_task(submit_lead_to_crea, new_lead, db)
-        
-        logger.info(f"✅ Created lead {new_lead.lead_id} for agent {agent_profile.crea_agent_key} on property {lead_data.listing_key}")
+        logger.info(f"Created lead {new_lead.lead_id} for agent {agent_profile.crea_agent_key} on property {lead_data.listing_key}")
         
         return new_lead
         
@@ -299,7 +239,7 @@ async def get_all_leads(
     
     - **status**: Filter by lead status
     - **priority**: Filter by priority  
-    - **agent_key**: Filter by CREA agent key
+    - **agent_key**: Filter by agent key
     - **limit**: Maximum number of leads to return
     - **offset**: Number of leads to skip
     """

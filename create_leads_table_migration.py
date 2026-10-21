@@ -3,7 +3,7 @@
 Database Migration: Create Leads Table
 
 This migration creates the leads table for capturing and managing real estate leads
-with automatic CREA integration.
+with automatic integration.
 
 Usage:
     python create_leads_table_migration.py
@@ -34,7 +34,7 @@ def run_migration():
         crea_agent_key VARCHAR(50) NOT NULL,
         office_key VARCHAR(50),
         
-        -- Required CREA Lead API fields
+        -- Required Lead API fields
         culture VARCHAR(10) NOT NULL DEFAULT 'en-CA',
         listing_key VARCHAR(50) NOT NULL,
         sender_name VARCHAR(255) NOT NULL,
@@ -49,7 +49,7 @@ def run_migration():
         lead_source VARCHAR(100),
         lead_priority VARCHAR(20) NOT NULL DEFAULT 'medium',
         
-        -- CREA API response tracking
+        -- API response tracking
         crea_lead_id VARCHAR(100),
         crea_submission_status VARCHAR(50) NOT NULL DEFAULT 'pending',
         crea_submission_error TEXT,
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         print("\\n🎉 Leads table migration completed! You can now:")
         print("   1. Create leads via POST /api/v1/leads/")
         print("   2. Leads will auto-sync crea_agent_key and office_key")
-        print("   3. Leads are automatically submitted to CREA API")
+        print("   3. Leads are automatically submitted to API")
         print("   4. Track lead status and follow-ups")
     else:
         print("\\n❌ Migration failed. Please check the error above.")

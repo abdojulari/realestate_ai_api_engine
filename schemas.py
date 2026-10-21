@@ -120,11 +120,9 @@ class PropertyBase(BaseModel):
     primary_image: Optional[str] = None
     images: Optional[List[str]] = None
     
-    # CREA Integration fields
     listing_key: Optional[str] = None
     modification_timestamp: Optional[datetime] = None
     
-    # CREA Agent and Office relationships  
     listing_agent_id: Optional[str] = None
     listing_office_id: Optional[str] = None
     co_listing_agent_id: Optional[str] = None
@@ -134,13 +132,11 @@ class PropertyBase(BaseModel):
     co_listing_office_id2: Optional[str] = None
     co_listing_office_id3: Optional[str] = None
     
-    # CREA Additional fields
     mls_listing_url: Optional[str] = None
     common_interest: Optional[str] = None
     accessibility_features: Optional[List[str]] = None
     other_amenities: Optional[List[str]] = None
     
-    # CREA Marketing & Financial fields
     tax_annual_amount: Optional[Decimal] = None
     days_on_market: Optional[int] = None
     zoning: Optional[str] = None
@@ -483,23 +479,22 @@ class EnhancedAgentResponse(BaseModel):
     # Agent profile information only
     profile_id: Optional[uuid.UUID] = None
     
-    # CREA Integration Fields
-    crea_agent_key: Optional[str] = None  # CREA MemberKey
-    member_mls_id: Optional[str] = None  # CREA MemberMlsId
-    member_national_association_id: Optional[str] = None  # CREA MemberNationalAssociationId
-    member_aor: Optional[str] = None  # CREA MemberAOR (Association of Realtors)
-    member_aor_key: Optional[str] = None  # CREA MemberAORKey
-    member_country: Optional[str] = None  # CREA MemberCountry
-    member_email_yn: Optional[bool] = None  # CREA MemberEmailYN
-    member_name_prefix: Optional[str] = None  # CREA MemberNamePrefix
-    member_name_suffix: Optional[str] = None  # CREA MemberNameSuffix
-    member_office_phone_ext: Optional[str] = None  # CREA MemberOfficePhoneExt
-    member_toll_free_phone: Optional[str] = None  # CREA MemberTollFreePhone
-    member_type: Optional[str] = None  # CREA MemberType
-    member_postal_code: Optional[str] = None  # CREA MemberPostalCode
-    office_key: Optional[str] = None  # CREA OfficeKey
-    office_national_association_id: Optional[str] = None  # CREA OfficeNationalAssociationId
-    job_title: Optional[str] = None  # CREA JobTitle
+    crea_agent_key: Optional[str] = None
+    member_mls_id: Optional[str] = None
+    member_national_association_id: Optional[str] = None
+    member_aor: Optional[str] = None
+    member_aor_key: Optional[str] = None
+    member_country: Optional[str] = None
+    member_email_yn: Optional[bool] = None
+    member_name_prefix: Optional[str] = None
+    member_name_suffix: Optional[str] = None
+    member_office_phone_ext: Optional[str] = None
+    member_toll_free_phone: Optional[str] = None
+    member_type: Optional[str] = None
+    member_postal_code: Optional[str] = None
+    office_key: Optional[str] = None
+    office_national_association_id: Optional[str] = None
+    job_title: Optional[str] = None
     
     # Professional Information
     aka: Optional[str] = None
@@ -528,7 +523,7 @@ class EnhancedAgentResponse(BaseModel):
 # For backward compatibility, create a computed property version
 class EnhancedAgentResponseWithUserData(BaseModel):
     # Combined view that includes user data for easy frontend consumption
-    user_id: Optional[uuid.UUID] = None  # Made optional for CREA agents without user accounts
+    user_id: Optional[uuid.UUID] = None
     email: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -541,23 +536,22 @@ class EnhancedAgentResponseWithUserData(BaseModel):
     # Agent profile information
     profile_id: Optional[uuid.UUID] = None
     
-    # CREA Integration Fields
-    crea_agent_key: Optional[str] = None  # CREA MemberKey
-    member_mls_id: Optional[str] = None  # CREA MemberMlsId
-    member_national_association_id: Optional[str] = None  # CREA MemberNationalAssociationId
-    member_aor: Optional[str] = None  # CREA MemberAOR (Association of Realtors)
-    member_aor_key: Optional[str] = None  # CREA MemberAORKey
-    member_country: Optional[str] = None  # CREA MemberCountry
-    member_email_yn: Optional[bool] = None  # CREA MemberEmailYN
-    member_name_prefix: Optional[str] = None  # CREA MemberNamePrefix
-    member_name_suffix: Optional[str] = None  # CREA MemberNameSuffix
-    member_office_phone_ext: Optional[str] = None  # CREA MemberOfficePhoneExt
-    member_toll_free_phone: Optional[str] = None  # CREA MemberTollFreePhone
-    member_type: Optional[str] = None  # CREA MemberType
-    member_postal_code: Optional[str] = None  # CREA MemberPostalCode
-    office_key: Optional[str] = None  # CREA OfficeKey
-    office_national_association_id: Optional[str] = None  # CREA OfficeNationalAssociationId
-    job_title: Optional[str] = None  # CREA JobTitle
+    crea_agent_key: Optional[str] = None
+    member_mls_id: Optional[str] = None
+    member_national_association_id: Optional[str] = None
+    member_aor: Optional[str] = None
+    member_aor_key: Optional[str] = None
+    member_country: Optional[str] = None
+    member_email_yn: Optional[bool] = None
+    member_name_prefix: Optional[str] = None
+    member_name_suffix: Optional[str] = None
+    member_office_phone_ext: Optional[str] = None
+    member_toll_free_phone: Optional[str] = None
+    member_type: Optional[str] = None
+    member_postal_code: Optional[str] = None
+    office_key: Optional[str] = None
+    office_national_association_id: Optional[str] = None
+    job_title: Optional[str] = None
     
     # Professional Information
     aka: Optional[str] = None
@@ -632,7 +626,6 @@ class AgentResponse(AgentBase):
     class Config:
         from_attributes = True
 
-# CREA Agent Profile Response (Enhanced)
 class CREAAgentProfileResponse(BaseModel):
     profile_id: uuid.UUID
     crea_agent_key: Optional[str] = None
@@ -661,7 +654,6 @@ class CREAAgentProfileResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# CREA Office Response
 class CREAOfficeResponse(BaseModel):
     office_id: uuid.UUID
     crea_office_key: Optional[str] = None
@@ -1014,15 +1006,13 @@ class LeadCreate(BaseModel):
     
     # Agent/Property identification
     agent_profile_id: uuid.UUID  # Which agent this lead is for
-    listing_key: str  # Property ListingKey from CREA
+    listing_key: str
     
-    # Required CREA Lead API fields (user input)
     culture: str = Field(default="en-CA", pattern="^(en-CA|fr-CA)$")  # en-CA or fr-CA
     sender_name: str = Field(..., min_length=1, max_length=255)  # Lead's full name
     sender_email_address: EmailStr  # Lead's email
     message: str = Field(..., min_length=1)  # Lead's message to agent
     
-    # Optional CREA fields
     sender_phone_number: Optional[str] = Field(None, max_length=50)
     preferred_method_contact: Optional[str] = Field(None, pattern="^(email|phone|text)$")
     sender_phone_extension: Optional[int] = Field(None, ge=0, le=99999)
@@ -1072,7 +1062,6 @@ class LeadResponse(BaseModel):
     crea_agent_key: str
     office_key: Optional[str] = None
     
-    # CREA Lead API fields
     culture: str
     listing_key: str
     sender_name: str
@@ -1087,7 +1076,6 @@ class LeadResponse(BaseModel):
     lead_source: Optional[str] = None
     lead_priority: str
     
-    # CREA submission tracking
     crea_lead_id: Optional[str] = None
     crea_submission_status: str
     crea_submission_error: Optional[str] = None
@@ -1132,7 +1120,7 @@ class LeadUpdate(BaseModel):
 
 
 class CREALeadSubmission(BaseModel):
-    """Schema for CREA Lead API submission"""
+    """Schema for Lead API submission"""
     
     Culture: str
     MemberKey: str
@@ -1142,4 +1130,4 @@ class CREALeadSubmission(BaseModel):
     SenderPhoneNumber: Optional[int] = None
     PreferredMethodContact: Optional[str] = None
     SenderPhoneExtension: Optional[int] = None
-    Message: str 
+    Message: str

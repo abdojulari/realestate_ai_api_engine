@@ -20,15 +20,15 @@ async def parse_prompt(
     db: Session = Depends(get_db)
 ):
     """
-    Parse natural language prompt and return real CREA property data.
+    Parse a plain-language prompt and return matching listings.
     
-    Searches comprehensive CREA database for properties matching user criteria including:
+    Searches stored listings for properties matching:
     - Location (city, province, address, postal code)
     - Property specifications (bedrooms, bathrooms, price, square feet)
     - Property types and amenities
     - Agent and office information
     
-    Returns live property data in complete CREA format.
+    Returns matching listings.
     """
     try:
         # Step 1: Enhanced parsing with comprehensive extraction
@@ -40,7 +40,7 @@ async def parse_prompt(
         # Step 2: Get legacy filters for backward compatibility  
         legacy_filters = enhanced_result
         
-        # Step 3: Build database query from real CREA properties
+        # Build the listing query from the parsed filters
         from db_models import Property, PropertyType, AgentProfile, Office
         from sqlalchemy.orm import joinedload
         from sqlalchemy import or_, and_, func, Text
@@ -195,7 +195,7 @@ async def parse_prompt(
                         Property.province.ilike(f"%{term}%"),
                         Property.postal_code.ilike(f"%{term}%"),
                         
-                        # Additional CREA fields
+                        # Extra listing fields
                         Property.common_interest.ilike(f"%{term}%"),
                         Property.zoning.ilike(f"%{term}%"),
                         
@@ -232,7 +232,7 @@ async def parse_prompt(
             offices = db.query(Office).filter(Office.crea_office_key.in_(office_ids)).all()
             offices_data = {office.crea_office_key: office for office in offices}
         
-        # Step 5: Format results in exact CREA format
+        # Format the matching listings
         results = []
         for prop in properties:
             # Get agent and office objects
@@ -339,7 +339,6 @@ async def parse_prompt(
             }
             results.append(result)
         
-        # Return results in your exact format - direct list of CREA properties
         return results
         
     except Exception as e:
@@ -442,15 +441,15 @@ async def recommend_properties(
     db: Session = Depends(get_db)
 ):
     """
-    Get property recommendations based on user preferences from real CREA database.
+    Find listings that match the supplied preferences.
     
-    Searches live property data matching user criteria:
+    Searches stored listings for:
     - Price range and budget constraints
     - Location preferences (city, province, neighborhood)
     - Property specifications (bedrooms, bathrooms, square feet)
     - Property types and amenities
     
-    Returns live CREA property data in complete format.
+    Returns matching listings.
     """
     try:
         # Build database query from user preferences
@@ -530,7 +529,7 @@ async def recommend_properties(
             offices = db.query(Office).filter(Office.crea_office_key.in_(office_ids)).all()
             offices_data = {office.crea_office_key: office for office in offices}
         
-        # Format results in exact CREA format
+        # Format the matching listings
         results = []
         for prop in properties:
             # Get agent and office objects

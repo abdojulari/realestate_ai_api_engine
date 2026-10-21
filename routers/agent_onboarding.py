@@ -26,11 +26,11 @@ async def claim_agent_profile(
     db: Session = Depends(get_db)
 ):
     """
-    Allow agents to claim their CREA profile by providing verification details.
+    Allow agents to claim a profile by providing verification details.
     This links their temporary User account to their real identity.
     """
     
-    # Verify agent exists with provided CREA information
+    # Verify the agent exists with the supplied details
     agent_profile = db.query(AgentProfile).filter(
         and_(
             AgentProfile.first_name.ilike(f"%{claim_request.first_name}%"),
@@ -46,7 +46,7 @@ async def claim_agent_profile(
     if not agent_profile:
         raise HTTPException(
             status_code=404,
-            detail="Agent profile not found. Please verify your CREA information."
+            detail="Agent profile not found. Please verify the details you entered."
         )
     
     # Check if profile is already claimed by a different user
@@ -332,7 +332,7 @@ async def edit_agent_profile(
     
     agent_profile = current_user.agent_profile
     
-    # Update editable fields (preserve CREA data)
+    # Update editable profile fields
     if profile_update.bio is not None:
         agent_profile.bio = profile_update.bio
     
@@ -349,7 +349,7 @@ async def edit_agent_profile(
         agent_profile.preferred_contact_method = profile_update.preferred_contact_method
     
     if profile_update.social_media is not None:
-        # Merge with existing social media, preserving CREA data
+        # Merge with the existing social media links
         existing_social = agent_profile.social_media or {}
         existing_social.update(profile_update.social_media.dict())
         agent_profile.social_media = existing_social

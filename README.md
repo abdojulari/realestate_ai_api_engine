@@ -40,7 +40,7 @@ cp .env.example .env
 python init_db.py
 ```
 
-Fill `CREA_CLIENT_ID` and `CREA_CLIENT_SECRET` in `.env` before calling CREA routes. Fill `SMTP_USERNAME` and `SMTP_PASSWORD` before sending email. The API starts without those values.
+Fill `SMTP_USERNAME` and `SMTP_PASSWORD` in `.env` before sending email. The API starts without those values.
 
 ### Migration and seed data
 
@@ -93,19 +93,6 @@ curl "http://127.0.0.1:8000/api/v1/users/me" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### CREA
-
-These routes need CREA credentials in `.env`.
-
-```bash
-curl "http://127.0.0.1:8000/api/v1/crea/token/status"
-curl "http://127.0.0.1:8000/api/v1/crea/test/connection"
-curl "http://127.0.0.1:8000/api/v1/crea/properties/search-all/Alberta?max_results=10"
-curl -X POST "http://127.0.0.1:8000/api/v1/crea/bulk/import-all-province?province=Alberta&max_properties=100"
-curl -X POST "http://127.0.0.1:8000/api/v1/crea/sync/province/Alberta"
-curl "http://127.0.0.1:8000/api/v1/crea/market/daily-report"
-```
-
 ## Routes
 
 | Area | Method | Path |
@@ -127,8 +114,6 @@ curl "http://127.0.0.1:8000/api/v1/crea/market/daily-report"
 | Properties | POST, DELETE | `/api/v1/properties/{property_id}/save` |
 | Properties | GET | `/api/v1/properties/{property_id}/amenities` |
 | Properties | GET, POST | `/api/v1/properties/{property_id}/images` |
-| Properties | POST | `/api/v1/properties/sync` |
-| Properties | GET | `/api/v1/properties/sync-status` |
 | Agents | GET | `/api/v1/agents/` |
 | Agents | GET | `/api/v1/agents/{agent_id}` |
 | Agents | GET | `/api/v1/agents/{agent_id}/properties` |
@@ -149,14 +134,6 @@ curl "http://127.0.0.1:8000/api/v1/crea/market/daily-report"
 | Market | GET | `/api/v1/market/trends` |
 | Market | GET | `/api/v1/market/complete` |
 | Market | POST | `/api/v1/market/sync` |
-| CREA | GET | `/api/v1/crea/test/connection` |
-| CREA | GET | `/api/v1/crea/token/status` |
-| CREA | POST | `/api/v1/crea/token/refresh` |
-| CREA | GET | `/api/v1/crea/properties/search-all/{province}` |
-| CREA | POST | `/api/v1/crea/bulk/import-all-province` |
-| CREA | POST | `/api/v1/crea/sync/province/{province}` |
-| CREA | POST | `/api/v1/crea/sync/all-provinces` |
-| CREA | GET | `/api/v1/crea/market/daily-report` |
 | Amenities | GET, POST | `/api/v1/amenities/` |
 | Views | GET, POST | `/api/v1/views/` |
 | Property types | GET, POST | `/api/v1/property-types/` |
@@ -175,16 +152,16 @@ The full list, including path parameters, is at http://127.0.0.1:8000/docs.
 
 ## TODO 
 
-- [x] Create a frontend UI 
-- [x] Let users find properties by describing what they want in everyday language. The parser uses rules and database filters, not a model.
-- [x] Create end-to-end, smoke and unit testings 
-- [x] Enable multi-factor authentication 
-- [x] redesign the architecture to allow tenant to be able to configure their respectful Data feed providers
-- [x] Support with in-app notification, tenant-based email notifications
-- [x] Create deployment script for production 
-- [x] Use opentelemetry for logging 
-- [x] Create a customer retention pipeline funnel to track engagement, improve loyalty and keep customers coming back
-- [x] Do not build, train, or fine-tune a custom model. Property matching uses database filters.
+- [ ] Create a frontend UI 
+- [ ] Let users find properties by describing what they want in everyday language. The parser uses rules and database filters, not a model.
+- [ ] Create end-to-end, smoke and unit testings 
+- [ ] Enable multi-factor authentication 
+- [ ] redesign the architecture to allow tenant to be able to configure their respectful Data feed providers
+- [ ] Support with in-app notification, tenant-based email notifications
+- [ ] Create deployment script for production 
+- [ ] Use opentelemetry for logging 
+- [ ] Create a customer retention pipeline funnel to track engagement, improve loyalty and keep customers coming back
+- [ ] Do not build, train, or fine-tune a custom model. Property matching uses database filters.
 
 ## License
 

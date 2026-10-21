@@ -35,13 +35,11 @@ async def discover_agents(
     # Calculate offset for pagination
     offset = (page - 1) * pageSize
     
-    # Base query for all agent profiles (including CREA imports without user accounts)
     base_query = db.query(AgentProfileModel).options(
         joinedload(AgentProfileModel.user),
         joinedload(AgentProfileModel.office)
     )
     
-    # Only show active agents (either with active user accounts or CREA imports)
     base_query = base_query.filter(
         or_(
             and_(AgentProfileModel.user_id.isnot(None), AgentProfileModel.user.has(User.is_active == True)),
@@ -105,7 +103,6 @@ async def discover_agents(
         return sanitized
     
     for agent_profile in agent_profiles:
-        # Handle both User-based agents and CREA imports
         if agent_profile.user:
             # User-based agent
             response_data = {
@@ -121,7 +118,6 @@ async def discover_agents(
                 "created_at": agent_profile.user.created_at,
             }
         else:
-            # CREA-imported agent without user account
             response_data = {
                 # Use agent profile data since no user exists
                 "user_id": None,
@@ -131,7 +127,7 @@ async def discover_agents(
                 "phone": agent_profile.agent_phone,
                 "full_name": f"{agent_profile.first_name or ''} {agent_profile.last_name or ''}".strip() or "Unknown Agent",
                 "role": "agent",
-                "is_active": True,  # CREA agents are considered active if imported
+                "is_active": True,
                 "created_at": agent_profile.created_at,
             }
         
@@ -245,7 +241,6 @@ async def get_agent_profile(
             return None
         return sanitized
     
-    # Query AgentProfile directly to include CREA-only agents
     agent_profile = db.query(AgentProfileModel).options(
         joinedload(AgentProfileModel.user),
         joinedload(AgentProfileModel.office)
@@ -328,7 +323,6 @@ async def get_agent_properties(
     if not agent_profile:
         raise HTTPException(status_code=404, detail="Agent not found")
     
-    # For CREA agents, use CREA agent key to find properties
     # For user agents, use user_id
     if agent_profile.user_id:
         # Agent has user account - use user_id
@@ -336,7 +330,6 @@ async def get_agent_properties(
             Listing.agent_id == agent_profile.user_id
         )
     else:
-        # CREA-only agent - use CREA agent key or listing_agent_id
         query = db.query(Property).filter(
             Property.listing_agent_id == agent_profile.crea_agent_key
         )
@@ -549,4 +542,4 @@ async def admin_update_agent_status(
             send_email=True
         )
     
-    return Message(message=f"Agent platform status updated to '{status_update.platform_status}' successfully") 
+    return Message(message=f"Agent platform status updated to '{status_update.platform_status}' successfully")
